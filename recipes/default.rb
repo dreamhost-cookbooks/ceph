@@ -49,3 +49,11 @@ packages.each do |pkg|
 		action :upgrade
 	end
 end
+
+logrotate_app "ceph" do
+	cookbook "logrotate"
+	path "/var/log/ceph/*.log"
+	frequency "daily"
+	rotate 9
+	create "644 root root"
+end

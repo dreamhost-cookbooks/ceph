@@ -95,3 +95,10 @@ apache_site "rgw.conf" do
 	enable enable_setting
 end
 
+logrotate_app "radosgw" do
+	cookbook "logrotate"
+	path "/var/log/ceph/client.*.log"
+	frequency "daily"
+	rotate 9
+	create "644 root root"
+end
