@@ -30,7 +30,7 @@ end
 packages = %w{
 	ceph
 	ceph-common
-	ceph-ceommon-dbg
+	ceph-common-dbg
 	librbd1
 	libceph1
 	librados2
