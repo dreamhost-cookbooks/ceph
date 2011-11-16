@@ -3,9 +3,9 @@ FastCgiExternalServer /var/www/dummyradosgw.fcgi -socket /var/run/ceph/radosgw.c
 LogFormat "%{X-Forwarded-For}i %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" proxy_combined
 LogFormat "%{X-Forwarded-For}i %h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" proxy_debug
 
-<VirtualHost <%= @ceph_rgw_addr %>>
-  ServerName <%= @ceph_api_fqdn %>
-  ServerAdmin <%= @ceph_admin_email %>
+<VirtualHost <%= @listen_addr %>:80>
+  ServerName <%= node[:dreamobjects][:api_url] %>
+  ServerAdmin <%= node[:dreamobjects][:api_admin_email] %>
   DocumentRoot /var/www/
 
   RewriteEngine On
@@ -21,10 +21,10 @@ LogFormat "%{X-Forwarded-For}i %h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{Use
     </Directory>
   </IfModule>
 
-  SetEnv RGW_DNS_NAME "<%= @ceph_api_fqdn %>"
+  SetEnv RGW_DNS_NAME "<%= node[:dreamobjects][:api_url] %>"
   SetEnv RGW_LOG_LEVEL 20
   SetEnv RGW_PRINT_CONTINUE "yes"
-  SetEnv RGW_OPENSTACK_URL "http://<%= @ceph_api_fqdn %>"
+  SetEnv RGW_OPENSTACK_URL "http://<%= node[:dreamobjects][:api_url] %>"
   SetEnv RGW_OPENSTACK_URL_PREFIX "swift"
   SetEnv RGW_REMOTE_ADDR_PARAM "X-Forwarded-For"
 

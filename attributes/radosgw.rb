@@ -19,5 +19,4 @@
 default["ceph"]["radosgw"]["version"] = "2.2.16-6+squeeze1-3-g80f8a77"
 default["ceph"]["radosgw"]["api_fqdn"] = "127.0.0.1"
 default["ceph"]["radosgw"]["admin-email"] = "admin@example.com"
-default["ceph"]["radosgw"]["rgw_addr"] = "*:80"
-
+default["ceph"]["radosgw"]["listen_addr"] = "127.0.0.1:80"

@@ -76,15 +76,19 @@ apache_module "rewrite" do
 	conf false
 end
 
+if node["network"][node[:network][:loadbal]]["v6"]["addr"]["primary"]
+	listen_addr = node["network"][node[:network][:loadbal]]["v6"]["addr"]["primary"]
+else
+	listen_addr = node["ceph"]["radosgw"]["listen_addr"]
+end
+
 template "/etc/apache2/sites-available/rgw.conf" do
 	source "rgw.conf.erb"
 	mode 0400
 	owner "root"
 	group "root"
 	variables(
-		:ceph_api_fqdn => node[:ceph][:api_fqdn],
-		:ceph_admin_email => node[:ceph][:admin_email],
-		:ceph_rgw_addr => node[:ceph][:rgw_addr]
+		:listen_addr => listen_addr
 	)
 	if ::File.exists?("#{node[:apache][:dir]}/sites-enabled/rgw.conf")
 		notifies :restart, "service[apache2]"
