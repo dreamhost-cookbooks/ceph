@@ -22,5 +22,5 @@ include_recipe "ceph::rados-rest"
 
 package "obsync" do
 	version = node['ceph']['version']
-	action :install
+	action :upgrade
 end

@@ -76,7 +76,7 @@ apache_module "rewrite" do
 	conf false
 end
 
-if node["network"][node[:network][:loadbal]]["v6"]["addr"]["primary"]
+if(defined? node["network"][node[:network][:loadbal]]["v6"]["addr"]["primary"]) then
 	listen_addr = node["network"][node[:network][:loadbal]]["v6"]["addr"]["primary"]
 else
 	listen_addr = node["ceph"]["radosgw"]["listen_addr"]
