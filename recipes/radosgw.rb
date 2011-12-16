@@ -47,7 +47,7 @@ packages = %w{
 template "/etc/apt/preferences.d/libapache2-mod-fastcgi-1001" do
 	source "fastcgi-pin.erb"
 	variables({
-		:package => pkg
+		:package =>'libapache2-mod-fastcgi'
 	})
 end
 
@@ -59,7 +59,6 @@ packages.each do |pkg|
 		})
 	end 
 end
-	libapache2-mod-fastcgi
 
 include_recipe "apache2"
 
