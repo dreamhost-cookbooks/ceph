@@ -18,7 +18,7 @@
 # limitations under the License.
 		        
 include_recipe "apt"
-include_recipe "ceph::rados-rest"
+include_recipe "ceph::radosgw"
 
 package "obsync" do
 	version = node['ceph']['version']
