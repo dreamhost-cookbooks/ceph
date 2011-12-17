@@ -121,16 +121,16 @@ end
 # this keyring will be used by filestore nodes to add new osd
 # instances
 hostname = node[:hostname]
-execute 'create client.rgw-#{hostname} keyring' do
-  creates '/etc/ceph/client.rgw-#{hostname}.keyring'
+execute 'create client.radosgw.#{hostname} keyring' do
+  creates '/etc/ceph/client.radosgw.#{hostname}.keyring'
   command <<-EOH
 set -e
 ceph-authtool \
   --create-keyring \
   --gen-key \
-  --name=client.rgw-#{hostname} \
-  /etc/ceph/client.rgw-#{hostname}.keyring.tmp
-mv /etc/ceph/client.rgw-#{hostname}.keyring.tmp /etc/ceph/client.rgw-#{hostname}.keyring
+  --name=client.radosgw.#{hostname} \
+  /etc/ceph/client.radosgw.#{hostname}.keyring.tmp
+mv /etc/ceph/client.radosgw.#{hostname}.keyring.tmp /etc/ceph/client.radosgw.#{hostname}.keyring
 EOH
-  creates '/etc/ceph/client.rgw-#{hostname}.keyring'
+  creates '/etc/ceph/client.radosgw.#{hostname}.keyring'
 end
