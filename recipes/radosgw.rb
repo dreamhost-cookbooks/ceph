@@ -44,7 +44,7 @@ packages = %w{
 	apache2.2-common
 }
 
-template "/etc/apt/preferences.d/libapache2-mod-fastcgi-1001" do
+template "/etc/apt/preferences.d/libapache2-mod-fastcgi-1001.pref" do
 	source "fastcgi-pin.erb"
 	variables({
 		:package =>'libapache2-mod-fastcgi'
@@ -52,7 +52,7 @@ template "/etc/apt/preferences.d/libapache2-mod-fastcgi-1001" do
 end
 
 packages.each do |pkg|
-	template "/etc/apt/preferences.d/" + pkg + "-1001" do
+	template "/etc/apt/preferences.d/" + pkg + "-1001.pref" do
 		source "apache-pin.erb"
 		variables({
 			:package => pkg 
@@ -66,6 +66,10 @@ packages.each do |pkg|
 	package pkg do 
 		action :upgrade
 	end
+end
+
+package 'libapache2-mod-fastcgi' do
+        action :upgrade
 end
 
 service "radosgw" do
