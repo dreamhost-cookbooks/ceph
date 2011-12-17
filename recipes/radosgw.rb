@@ -116,3 +116,21 @@ logrotate_app "radosgw" do
 	rotate 9
 	create "644 root root"
 end
+
+# client.rgw-<%= node[:hostname] %>
+# this keyring will be used by filestore nodes to add new osd
+# instances
+hostname = node[:hostname]
+execute 'create client.rgw-#{hostname} keyring' do
+  creates '/etc/ceph/client.rgw-#{hostname}.keyring'
+  command <<-EOH
+set -e
+ceph-authtool \
+  --create-keyring \
+  --gen-key \
+  --name=client.rgw-#{hostname} \
+  /etc/ceph/client.rgw-#{hostname}.keyring.tmp
+mv /etc/ceph/client.rgw-#{hostname}.keyring.tmp /etc/ceph/client.rgw-#{hostname}.keyring
+EOH
+  creates '/etc/ceph/client.rgw-#{hostname}.keyring'
+end
