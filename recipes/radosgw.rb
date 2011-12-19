@@ -117,7 +117,7 @@ logrotate_app "radosgw" do
 	create "644 root root"
 end
 
-# client.rgw-<%= node[:hostname] %>
+# client.radosgw.<%= node[:hostname] %>
 # this keyring will be used by filestore nodes to add new osd
 # instances
 hostname = node[:hostname]
