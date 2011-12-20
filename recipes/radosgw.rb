@@ -133,4 +133,5 @@ ceph-authtool \
 mv /etc/ceph/client.radosgw.#{hostname}.keyring.tmp /etc/ceph/client.radosgw.#{hostname}.keyring
 EOH
   creates '/etc/ceph/client.radosgw.#{hostname}.keyring'
+  not_if {File.exists?("/etc/ceph/client.radosgw.#{hostname}.keyring")}
 end
