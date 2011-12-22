@@ -29,6 +29,7 @@ end
 
 packages = %w{
 	ceph
+	ceph-dbg
 	ceph-common
 	ceph-common-dbg
 	librbd1
