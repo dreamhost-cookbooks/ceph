@@ -86,8 +86,8 @@ apache_module "rewrite" do
 	conf false
 end
 
-if(defined? node["network"][node[:network][:loadbal]]["v6"]["addr"]["primary"]) then
-	listen_addr = node["network"][node[:network][:loadbal]]["v6"]["addr"]["primary"]
+if(defined? node["network"][node["network"]["loadbal"]]["v6"]["addr"]["primary"]) then
+	listen_addr = node["network"][node["network"]["loadbal"]]["v6"]["addr"]["primary"]
 else
 	listen_addr = node["ceph"]["radosgw"]["listen_addr"]
 end
@@ -100,7 +100,7 @@ template "/etc/apache2/sites-available/rgw.conf" do
 	variables(
 		:listen_addr => listen_addr
 	)
-	if ::File.exists?("#{node[:apache][:dir]}/sites-enabled/rgw.conf")
+	if ::File.exists?("#{node['apache']['dir']}/sites-enabled/rgw.conf")
 		notifies :restart, "service[apache2]"
 	end
 end
@@ -120,7 +120,7 @@ end
 # client.radosgw.<%= node[:hostname] %>
 # this keyring will be used by filestore nodes to add new osd
 # instances
-hostname = node[:hostname]
+hostname = node["hostname"]
 execute 'create client.radosgw.#{hostname} keyring' do
   creates '/etc/ceph/client.radosgw.#{hostname}.keyring'
   command <<-EOH
