@@ -20,7 +20,13 @@
 include_recipe "apt"
 include_recipe "ceph::radosgw"
 
-package "obsync" do
-	version = node['ceph']['version']
-	action :upgrade
+packages = %w{
+	obsync
+	python-cloudfiles
+}
+packages.each do |pkg|
+	package pkg do
+		version = node['ceph']['version']
+		action :upgrade
+	end
 end

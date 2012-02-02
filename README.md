@@ -1,8 +1,7 @@
 DESCRIPTION
 ===========
 
-Installs and configures Ceph, a distributed network storage and filesystem 
-designed to provide excellent performance, reliability, and scalability.
+Installs and configures Ceph, a distributed network storage and filesystem designed to provide excellent performance, reliability, and scalability.
 
 REQUIREMENTS
 ============
