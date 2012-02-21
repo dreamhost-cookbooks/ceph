@@ -2,7 +2,7 @@
 # Cookbook Name:: ceph
 # Attributes:: radosgw
 #
-# Copyright 2011, DreamHost Web Hosting
+# Copyright 2011, DreamHost.com
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-default["ceph"]["radosgw"]["version"] = "2.2.16-6+squeeze1-3-g80f8a77"
-default["ceph"]["radosgw"]["api_fqdn"] = "127.0.0.1"
 default["ceph"]["radosgw"]["admin-email"] = "admin@example.com"
+default["ceph"]["radosgw"]["api_fqdn"] = "127.0.0.1"
 default["ceph"]["radosgw"]["listen_addr"] = "127.0.0.1"
+default["ceph"]["radosgw"]["version"] = "2.2.16-6+squeeze1-3-g80f8a77"

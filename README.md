@@ -1,19 +1,18 @@
-DESCRIPTION
+Description
 ===========
 
-Installs and configures Ceph, a distributed network storage and filesystem designed to provide excellent performance, reliability, and scalability.
+Installs and configures Ceph, a distributed network storage and filesystem 
+designed to provide excellent performance, reliability, and scalability.
 
-REQUIREMENTS
+Requirements
 ============
 
-Platform
---------
+## Platform:
 
-Tested as working:
- * Debian Squeeze (6.x)
+Tested on Debian Squeeze. Should work on any Debian or Ubuntu family
+distribution.
 
-Cookbooks
----------
+## Cookbooks:
 
 The ceph cookbook requires the following cookbooks from Opscode:
 
@@ -22,10 +21,11 @@ https://github.com/opscode/cookbooks
 * apache2
 * apt
 * haproxy
+* logrotate
 
-Also required are the following cookbooks New Dream Network (DreamHost.com):
+Also required are the following cookbooks from DreamHost.com:
 
-https://github.com/NewDreamNetwork/ceph-cookbooks
+https://git.newdream.net/ops
 
 * btrfs
 * parted
@@ -37,8 +37,7 @@ repository.
 ATTRIBUTES
 ==========
 
-All Ceph Nodes
---------------
+## All Ceph Nodes:
 
 All nodes will look to the Ceph version attribute to specify which package
 version to install on all nodes in the cluster. This version is pinned in
@@ -53,17 +52,12 @@ repository, it is assumed you will be running chef-client in daemon mode.
 
 * node[:ceph][:version]
 
-Ceph Rados Gateway
-------------------
+## Ceph Rados Gateway:
 
-* node[:ceph][:radosgw][:api_fqdn]
 * node[:ceph][:radosgw][:admin_email]
-
-Ceph Balancer
--------------
-
-*
-*
+* node[:ceph][:radosgw][:api_fqdn]
+* node[:ceph][:radosgw][:listen_addr]
+* node[:ceph][:radosgw][:version]
 
 TEMPLATES
 =========
@@ -78,71 +72,38 @@ http://ceph.newdream.net/wiki/
 http://ceph.newdream.net/mailing-lists-and-irc/
 http://www.cephsupport.com/
 
-This diagram helps visualize recipe inheritence of the ceph cookbook recipes:
+## Ceph Monitor:
 
- <diagram url>
+Simply add `recipe[ceph::mon]` to a run list.
 
-Ceph Monitor
-------------
+## Ceph Metadata Server:
 
-Ceph monitor nodes should use the ceph::mon recipe. 
+Simply add `recipe[ceph::mds]` to a run list.
 
-Includes:
+## Ceph OSD:
 
-* ceph::default
-* ceph::rados-rest
+Simply add `recipe[ceph::osd]` to a run list.
 
-Ceph Metadata Server
---------------------
+## Ceph Rados Gateway:
 
-Ceph metadata server nodes should use the ceph::mds recipe.
+Simply add `recipe[ceph::radosgw]` to a run list.
 
-Includes:
-
-* ceph::default
-
-Ceph OSD
---------
-
-Ceph OSD nodes should use the ceph::osd recipe
-
-Includes:
-
-* ceph::default
-
-Ceph Rados Gateway
-------------------
-
-Ceph Rados Gateway nodes should use the ceph::radosgw recipe
-
-Includes:
-
-* ceph::rados-rest
-
-Ceph Balancer
--------------
-
-Ceph Balancer nodes should use the ceph::balancer recipe
-
-Includes:
-
-* 
-
-LICENSE AND AUTHORS
+License and Authors
 ===================
 
-* Author: Kyle Bader <kyle.bader@dreamhost.com>
+Author:: Kyle Bader (<kyle.bader@dreamhost.com>)
+Author:: Carl Perry (<carl.perry@dreamhost.com>)
 
-* Copyright 2011, DreamHost Web Hosting
+Copyright:: 2011, DreamHost.com
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
