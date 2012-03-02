@@ -18,3 +18,8 @@
 #
 
 default["ceph"]["version"] = "0.33-505-gb71f3bc-1~bpo60+1"
+default["ceph"]["mon_osd_down_out_interval"] = 600
+default["ceph"]["debug_mon"] = 20
+default["ceph"]["debug_ms"] = 1
+default["ceph"]["debug_osd"] = 1
+default["ceph"]["debug_filestore"] = 20

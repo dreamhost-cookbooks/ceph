@@ -58,3 +58,20 @@ logrotate_app "ceph" do
 	rotate 9
 	create "644 root root"
 end
+
+directory "/etc/ceph" do
+	action :create
+	owner "root"
+	group "root"
+	mode "0750"
+end
+
+template "/etc/ceph/ceph.conf" do
+	source "ceph.conf.erb"
+	variables(
+		:monitors => search(:node, "role:ceph-mon")
+	)
+	owner "root"
+	group "root"
+	mode "0640"
+end
