@@ -1,9 +1,9 @@
-maintainer       "Kyle Bader"
-maintainer_email "kyle.bader@dreamhost.com"
+maintainer       "DreamHost Ops"
+maintainer_email "chef@dreamhost.com"
 license          "Apache 2.0"
 description      "Installs/Configures the Ceph distributed filesystem"
-#long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))Â
-version          "1.0.3"
+long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
+version          "1.8.6"
 recipe           "ceph::admin", ""
 recipe           "ceph::mds", ""
 recipe           "ceph::mon", ""

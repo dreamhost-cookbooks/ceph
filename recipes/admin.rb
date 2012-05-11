@@ -22,11 +22,11 @@ include_recipe "ceph::default"
 include_recipe "ceph::rados-rest"
 
 apt_repository "ceph" do
-    uri "http://deploy.benjamin.dhobjects.net/ceph/combined/"
-    distribution node['lsb']['codename']
-    components ["main"]
-    key "http://ceph.newdream.net/03C3951A.asc"
-    action :add
+  uri "http://deploy.benjamin.dhobjects.net/ceph-#{node['lsb']['codename']}/combined/"
+  distribution node['lsb']['codename']
+  components ["main"]
+  key "https://raw.github.com/ceph/ceph/master/keys/autobuild.asc"
+  action :add
 end
 
 packages = %w{ 
@@ -49,4 +49,14 @@ packages.each do |pkg|
         version = node['ceph']['version']
         action :upgrade
     end 
+end
+
+if (node['ceph']['admin_key'].nil?) then
+  Chef::Log.info("No admin key available for creating keyring")
+else
+  execute "create admin keyring" do
+    command "ceph-authtool -C /etc/ceph/client.admin.keyring --name=client.admin --add-key='#{node['ceph']['admin_key']}'"
+    creates "/etc/ceph/client.admin.keyring"
+    action :run
+  end
 end

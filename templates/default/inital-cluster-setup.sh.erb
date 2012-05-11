@@ -1,0 +1,119 @@
+#!/bin/bash
+
+set -e
+
+cat <<EOF
+Ceph inital cluster setup script
+
+This utility will do the initial setup of a Ceph
+cluster and provide the needed JSON attributes
+which will need to be added to Chef.
+
+This script runs in errexit mode, so if any
+command fails, you'll need to clean up and
+start over.  
+
+If successful, the Ceph MON on this node will
+start.  At that point, we recommend updating
+Chef to include the necessary JSON attributes
+and then run the chef-client on the other
+Ceph MON nodes (if any) before running the
+chef-client on any other Cpeh nodes.
+
+Let' get started.
+EOF
+
+echo ">>Get the Ceph package version"
+version=$(dpkg-query -f '${Version}\n' --show ceph)
+
+echo ">>Create a working directory"
+install -d -m0700 /srv/ceph/temp.mon.setup
+
+echo ">>Create ceph logs directoy"
+install -d -m0700 /var/log/ceph
+
+echo ">>Generate an admin key"
+ceph-authtool --create-keyring --gen-key --name=client.admin --set-uid=0 --cap mon 'allow *' --cap osd 'allow *' --cap mds 'allow' /etc/ceph/client.admin.keyring.tmp
+mv /etc/ceph/client.admin.keyring.tmp /etc/ceph/client.admin.keyring
+
+echo ">>Extract the admin key"
+admin_key=$(ceph-authtool --name client.admin -p /etc/ceph/client.admin.keyring)
+
+echo ">>Create the MON key"
+ceph-authtool --create-keyring --gen-key --name=mon. /srv/ceph/temp.mon.setup/keyring
+
+echo ">>Extract the MON key"
+mon_key=$(ceph-authtool --name mon. -p /srv/ceph/temp.mon.setup/keyring)
+
+echo ">>Create OSD bootsrap key"
+ceph-authtool --create-keyring --gen-key --name=client.bootstrap-osd /etc/ceph/client.bootstrap-osd.keyring.tmp
+mv /etc/ceph/client.bootstrap-osd.keyring.tmp /etc/ceph/client.bootstrap-osd.keyring
+
+echo ">>Extract the OSD Bootstrap key"
+osd_key=$(ceph-authtool --name client.bootstrap-osd -p /etc/ceph/client.bootstrap-osd.keyring)
+
+echo ">>Add admin key to monitor keyring"
+cat /etc/ceph/client.admin.keyring >>/srv/ceph/temp.mon.setup/keyring
+
+echo ">>Generate an initial monmap with only this node"
+<% if (node["network"][node["network"]["storage"]]["v6"]["addr"]["primary"].nil?) -%>
+monmaptool --create --clobber --add <%= node['hostname'] %> <%= node["network"][node["network"]["storage"]]["v4"]["addr"]["primary"] %> /srv/ceph/temp.mon.setup/monmap
+<% else -%>
+monmaptool --create --clobber --add <%= node['hostname'] %> [<%= node["network"][node["network"]["storage"]]["v6"]["addr"]["primary"] %>] /srv/ceph/temp.mon.setup/monmap
+<% end -%>
+
+echo ">>Generate a simple OSD map and CRUSH map for this cluster"
+osdmaptool --clobber --createsimple 1 /srv/ceph/temp.mon.setup/osdmap
+
+echo ">>Smush the whole mess together into a complete MON dataset"
+ceph-mon --mkfs -i <%= node["hostname"] %> --monmap=/srv/ceph/temp.mon.setup/monmap --osdmap=/srv/ceph/temp.mon.setup/osdmap --keyring=/srv/ceph/temp.mon.setup/keyring
+
+echo ">>Start the MON"
+service ceph start mon.<%= node['hostname'] %>
+
+echo ">>Get the FSID"
+fsid=$(ceph fsid --concise)
+
+echo ">>Add caps to the OSD Bootstrap key"
+ceph auth add -i /etc/ceph/client.bootstrap-osd.keyring client.bootstrap-osd mon 'allow command osd create; allow command osd crush add ...; allow command auth add * osd allow\ * mon allow\ rwx; allow command mon getmap'
+
+echo ">>Compile the Chef ready crushmap"
+crushtool -c /etc/ceph/chef-crushmap.txt -o /srv/ceph/temp.mon.setup/crushmap
+
+echo ">>Use the Chef ready crushmap"
+ceph osd setcrushmap -i /srv/ceph/temp.mon.setup/crushmap
+
+# It's all over for the cleanup, let's recap
+cat <<EOF
+
+Installation complete.  Below is the information
+you need to add to Chef.  Don't worry if you
+don't grab it all right now, I'm storing it
+in /etc/ceph/chef.json for your reference.
+
+Also, once this information is added to Chef
+this script will be removed and all other 
+Ceph MONs will be created when chef-client
+is run on nodes with the ceph-mon role.
+
+
+EOF
+
+# Generate and sput out the Chef JSON data
+cat > /etc/ceph/ceph.json <<EOF
+    "ceph": {
+      "version": "${version}",
+      "fsid": "${fsid}",
+      "mon_bootstrap": "${mon_key}",
+      "osd_bootstrap": "${osd_key}",
+      "admin_key": "${admin_key}"
+    }
+EOF
+cat /etc/ceph/ceph.json
+echo
+echo
+
+# Clean Up
+rm -rf /srv/ceph/temp.mon.setup
+
+echo ">>Done!"

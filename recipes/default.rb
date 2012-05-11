@@ -20,11 +20,11 @@
 include_recipe "apt"
 
 apt_repository "ceph" do
-	uri "http://deploy.benjamin.dhobjects.net/ceph/combined/"
-	distribution node['lsb']['codename']
-	components ["main"]
-	key "http://ceph.newdream.net/03C3951A.asc"
-	action :add
+  uri "http://deploy.benjamin.dhobjects.net/ceph-#{node['lsb']['codename']}/combined/"
+  distribution node['lsb']['codename']
+  components ["main"]
+  key "https://raw.github.com/ceph/ceph/master/keys/autobuild.asc"
+  action :add
 end
 
 packages = %w{
@@ -33,7 +33,6 @@ packages = %w{
 	ceph-common
 	ceph-common-dbg
 	librbd1
-	libceph1
 	librados2
 }
 packages.each do |pkg|
@@ -60,18 +59,22 @@ logrotate_app "ceph" do
 end
 
 directory "/etc/ceph" do
-	action :create
-	owner "root"
-	group "root"
-	mode "0750"
+  owner "root"
+  group "root"
+  mode "0755"
+  action :create
 end
 
-template "/etc/ceph/ceph.conf" do
-	source "ceph.conf.erb"
-	variables(
-		:monitors => search(:node, "role:ceph-mon")
-	)
-	owner "root"
-	group "root"
-	mode "0640"
+directory "/var/run/ceph" do
+  owner "root"
+  group "root"
+  mode "0755"
+  action :create
+end
+
+directory "/var/log/ceph" do
+  owner "root"
+  group "root"
+  mode "0755"
+  action :create
 end

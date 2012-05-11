@@ -9,7 +9,7 @@ Requirements
 
 ## Platform:
 
-Tested on Debian Squeeze. Should work on any Debian or Ubuntu family
+Tested on Debian Squeeze, Ubuntu Oneiric. Should work on any Debian or Ubuntu family
 distribution.
 
 ## Cookbooks:
@@ -39,6 +39,8 @@ ATTRIBUTES
 
 ## All Ceph Nodes:
 
+* node[:ceph][:version]
+
 All nodes will look to the Ceph version attribute to specify which package
 version to install on all nodes in the cluster. This version is pinned in
 place with Apt preferences, you can read about how they work here:
@@ -50,7 +52,56 @@ the cluster on their own time table. Without pinning the cluster would
 automatically upgrade whenever a new package is pushed to the public Ceph
 repository, it is assumed you will be running chef-client in daemon mode.
 
-* node[:ceph][:version]
+## Ceph OSD Nodes:
+
+* node[:ceph][:devices]
+
+An array of devices to be used for OSD creation.  These should be populated
+at the node level and contain the following information:
+
+** data_dev : Device which will hold the OSD data volume
+** journal_dev : Device which will hold the OSD journal
+** osd_id : Can be omitted, will be populated by the osd recipe
+** status : on of the following states:
+*** create : build a new OSD using these attributes
+*** destory : destroy the OSD using these attributes
+*** recreate : destroy then create called in sucession
+*** anything else : do nothing
+
+* node[:ceph][:filesystem]
+
+Sets the filesystem to be used when creating an OSD mountpoint. Defaults to
+xfs (if undefined or an unknown fs used). Possible values: xfs, btrfs, ext4
+
+* node[:ceph][:mkxfsfs_options]
+* node[:ceph][:mkbtrfs_options]
+* node[:ceph][:mkext4fs_options]
+
+Extra command line options to pass to the appropriate mkfs.  This is useful
+for tuning the filesystem metadata size, optimizing for RAID controllers,
+etc.  Note that the mkfs command already has a force option and a label
+option passed in the recipe.
+
+* node[:ceph][:osd_bootstrap]
+
+This is the CephX key for creating new OSD instances, and is created as
+part of the initial cluster creation.  If this key does not exist, or
+does not have the correct caps applied to it, then automated OSD
+management will not function.
+
+## Ceph MON Nodes
+
+* node[:ceph][:mon_bootstrap]
+
+This is the CephX key for creating new MON nodes.  This too is created
+as part of the initial cluster creation.  If this key does not exist
+then automated MON mangement will not function.
+
+* node[:ceph][:fsid]
+
+This is the unique Ceph filesystem ID for the cluster.  This ensures
+that multiple clusters on the same network(s) do not interact.  If
+this does not exist then automate MON mangement will not function.
 
 ## Ceph Rados Gateway:
 
@@ -94,7 +145,7 @@ License and Authors
 Author:: Kyle Bader (<kyle.bader@dreamhost.com>)
 Author:: Carl Perry (<carl.perry@dreamhost.com>)
 
-Copyright:: 2011, DreamHost.com
+Copyright:: 2011, 2012, New Dream Network DBA DreamHost.com
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

@@ -20,11 +20,11 @@
 include_recipe "apt"
 
 apt_repository "ceph" do
-	uri "http://deploy.benjamin.dhobjects.net/ceph/combined/"
-	distribution node['lsb']['codename']
-	components ["main"]
-	key "http://ceph.newdream.net/03C3951A.asc"
-	action :add
+  uri "http://deploy.benjamin.dhobjects.net/ceph-#{node['lsb']['codename']}/combined/"
+  distribution node['lsb']['codename']
+  components ["main"]
+  key "https://raw.github.com/ceph/ceph/master/keys/autobuild.asc"
+  action :add
 end
 
 packages = %w{
