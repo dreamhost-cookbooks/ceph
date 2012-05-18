@@ -141,12 +141,10 @@ def create_osd (osd_device, bootstrap_key, bootstrap_path, monmap_path)
   #end
 end
 
-def destroy_osd (osd_device, bootstrap_key, bootstrap_path, monmap_path)
+def destroy_osd (osd_device, adminkey_path)
   Chef::Log.info("Going to destroy OSD #{osd_device['osd_id']}")
-  #Chef::Log.info("About to create keyring at #{bootstrap_path} with #{bootstrap_key}")
-  %x{if [ ! -f #{bootstrap_path} ]; then touch #{bootstrap_path}; ceph-authtool #{bootstrap_path} --name=client.bootstrap-osd --add-key='#{bootstrap_key}'; fi}
-  #Chef::Log.info("About to download monmap to #{monmap_path}")
-  %x{if [ ! -f #{monmap_path} ]; then ceph -k #{bootstrap_path} -n client.bootstrap-osd mon getmap -o #{monmap_path}; fi}
+  %x{if [ ! -f #{adminkey_path} ]; then touch #{adminkey_path}; ceph-authtool #{adminkey_path} --name=client.admin \
+--add-key='#{node['ceph']['admin_key']}'; fi}
 
   # Stop the daemon and disable the service
   execute "Stopping osd.#{osd_device['osd_id']}" do
@@ -156,8 +154,36 @@ def destroy_osd (osd_device, bootstrap_key, bootstrap_path, monmap_path)
   
   # Mark this osd as unused
   if (! osd_device['osd_id'].nil?)
-    # TBD
-    Chef::Log.info("Need to mark osd_id " + osd_device["osd_id"] + " as unused")
+    # Take OSD down
+    execute "Take OSD #{osd_device['osd_id']} down" do
+      command "ceph --name client.admin --keyring #{adminkey_path} \
+                osd down #{osd_device['osd_id']}"
+      returns [0,1]
+    end
+    # Take OSD out
+    execute "Take OSD #{osd_device['osd_id']} out" do
+      command "ceph --name client.admin --keyring #{adminkey_path} \
+                osd out #{osd_device['osd_id']}"
+      returns [0,1]
+    end
+    # Remove from crushmap
+    execute "Removing OSD #{osd_device['osd_id']} to crushmap at #{node['physical_location']['row']}:#{node['physical_location']['rack']}:#{node['hostname']}" do
+      command "ceph --name client.admin --keyring #{adminkey_path} \
+                osd crush remove #{osd_device['osd_id']}"
+      returns [0,1]
+    end
+    # Remove OSD from OSD Map
+    execute "Remove OSD #{osd_device['osd_id']} from OSD Map" do
+      command "ceph --name client.admin --keyring #{adminkey_path} \
+                osd rm #{osd_device['osd_id']}"
+      returns [0,1]
+    end
+    # Remove OSD key
+    execute "Remove OSD #{osd_device['osd_id']} key" do
+      command "ceph --name client.admin --keyring #{adminkey_path} \
+                auth del osd.#{osd_device['osd_id']}"
+      returns [0,1]
+    end
   end
   
   # Remove the fstab entry
@@ -182,6 +208,7 @@ def destroy_osd (osd_device, bootstrap_key, bootstrap_path, monmap_path)
   # Umount the filesystem
   execute "Umounting data device for OSD #{osd_device['osd_id']}" do
     command "umount /srv/ceph/osd/#{osd_device['osd_id']}"
+    returns [0,1]
   end
   
   # Destroy the directory for the OSD mountpoint exists
@@ -190,11 +217,6 @@ def destroy_osd (osd_device, bootstrap_key, bootstrap_path, monmap_path)
     action :delete
   end
   
-  # Remove from crushmap
-  execute "Removing OSD #{osd_device['osd_id']} to crushmap at #{node['physical_location']['row']}:#{node['physical_location']['rack']}:#{node['hostname']}" do
-    command "ceph --name client.bootstrap-osd --keyring #{bootstrap_path} \
-                osd crush remove #{osd_device['osd_id']}"
-  end
   
   # Make supervisord config
   # Start via supervisord
@@ -251,7 +273,10 @@ else
   bootstrap_path = "/tmp/bootstrap-osd-" + randomFileNameSuffix(7)
   # Setup a monmap
   monmap_path = "/tmp/monmap-" + randomFileNameSuffix(7)
+  # Setup an admin key
+  adminkey_path = "/tmp/adminkey-" + randomFileNameSuffix(7)
 
+  node.save # This should store the osd_id data before we head off into the fray1
 
   node['ceph']['osd_devices'].each do |osd_device|
     # Handle status switch: hold, recreate, create, destroy then call appropriate functions.
@@ -259,12 +284,13 @@ else
     if (osd_device['status'] == "create")
       create_osd(osd_device, bootstrap_key, bootstrap_path, monmap_path)
     elsif (osd_device['status'] == "destroy" && /^[0-9]+$/.match(osd_device['osd_id']))
-      destroy_osd(osd_device, bootstrap_key, bootstrap_path, monmap_path)
+      destroy_osd(osd_device, adminkey_path)
     elsif (osd_device['status'] == "recreate" && /^[0-9]+$/.match(osd_device['osd_id']))
       Chef::Log.info("About to recreate OSD #{osd_device['osd_id']} by destroying then creating it")
-      destroy_osd(osd_device, bootstrap_key, bootstrap_path, monmap_path)
+      destroy_osd(osd_device, adminkey_oath)
       create_osd(osd_device, bootstrap_key, bootstrap_path, monmap_path)
     end #status==create
+    node.save # Prevent bum chef runs from messing up the works.
   end #osd_device
 
   # Cleanup tempfiles
@@ -272,6 +298,9 @@ else
     action :delete
   end
   file bootstrap_path do
+    action :delete
+  end
+  file adminkey_path do
     action :delete
   end
 

@@ -94,25 +94,28 @@ else
       command "monmaptool --create #{monmap_path} --fsid #{node['ceph']['fsid']}"
     end
 
-    # Get the list of monitors from Chef to build a monmap
-    #mon_pool = search(:node, "roles:ceph-mon AND chef_environment:#{node.chef_environment}")
-    #mon_pool.each do |matching|
-    #  if (node["fqdn"] != matching["fqdn"])
-    #    if (matching["network"][node["network"]["storage"]]["v6"]["addr"]["primary"].nil?) then
-    #      execute "Adding #{matching['hostname']} to monmap using IPv4" do
-    #        command "monmaptool --add #{matching['hostname']} [#{matching["network"][node["network"]["storage"]]["v4"]["addr"]["primary"]}]:6789 #{monmap_path}"
-    #      end
-    #    else
-    #      execute "Adding #{matching['hostname']} to monmap using IPv6" do
-    #        command "monmaptool --add #{matching['hostname']} [#{matching["network"][node["network"]["storage"]]["v6"]["addr"]["primary"]}]:6789 #{monmap_path}"
-    #      end
-    #    end
-    #  end
-    #end
+     Get the list of monitors from Chef to build a monmap
+    mon_list = Array.new
+    mon_pool = search(:node, "roles:ceph-mon AND chef_environment:#{node.chef_environment}")
+    mon_pool.each do |matching|
+      if (node["fqdn"] != matching["fqdn"])
+        if (matching["network"][node["network"]["storage"]]["v6"]["addr"]["primary"].nil?) then
+#          execute "Adding #{matching['hostname']} to monmap using IPv4" do
+#            command "monmaptool --add #{matching['hostname']} [#{matching["network"][node["network"]["storage"]]["v4"]["addr"]["primary"]}]:6789 #{monmap_path}"
+#          end
+          mon_list << "#{matching["network"][node["network"]["storage"]]["v4"]["addr"]["primary"]}:6789"
+        else
+#          execute "Adding #{matching['hostname']} to monmap using IPv6" do
+#            command "monmaptool --add #{matching['hostname']} [#{matching["network"][node["network"]["storage"]]["v6"]["addr"]["primary"]}]:6789 #{monmap_path}"
+#          end
+          mon_list << "[#{matching["network"][node["network"]["storage"]]["v6"]["addr"]["primary"]}]:6789"
+        end
+      end
+    end
 
     execute "Bootstrap Monitor" do
 #      command "ceph-mon -i #{node['hostname']} --mkfs --monmap #{monmap_path} --fsid #{node['ceph']['fsid']} --keyring #{bootstrap_path}"
-      command "ceph-mon -i #{node['hostname']} --mkfs --fsid #{node['ceph']['fsid']} --keyring #{bootstrap_path}"
+      command "ceph-mon -i #{node['hostname']} --mkfs --fsid #{node['ceph']['fsid']} --keyring #{bootstrap_path} -m #{mon_list.join(",")}"
     end
 
     file bootstrap_path do

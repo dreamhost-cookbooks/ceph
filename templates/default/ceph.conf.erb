@@ -42,6 +42,7 @@
         osd data = /srv/ceph/osd/$id
 	filestore flusher = false
         max open files = 4096
+        admin socket = /var/run/ceph/ceph-$name.asok
 <% if (! node["ceph"]["debug"].nil?) then -%>
 <%   if (! node["ceph"]["debug"]["osd"].nil?) then -%>
         debug osd = <%= node["ceph"]["debug"]["osd"] %>
