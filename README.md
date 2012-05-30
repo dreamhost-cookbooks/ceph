@@ -62,10 +62,10 @@ at the node level and contain the following information:
 ** data_dev : Device which will hold the OSD data volume
 ** journal_dev : Device which will hold the OSD journal
 ** osd_id : Can be omitted, will be populated by the osd recipe
-** status : on of the following states:
+** status : one of the following states:
 *** create : build a new OSD using these attributes
 *** destory : destroy the OSD using these attributes
-*** recreate : destroy then create called in sucession
+*** recreate : destroy then create called in succession
 *** anything else : do nothing
 
 * node[:ceph][:filesystem]
@@ -84,9 +84,9 @@ option passed in the recipe.
 
 * node[:ceph][:osd_bootstrap]
 
-This is the CephX key for creating new OSD instances, and is created as
-part of the initial cluster creation.  If this key does not exist, or
-does not have the correct caps applied to it, then automated OSD
+This is the CephX key that is used for creating new OSD instances and is
+created as part of the initial cluster creation.  If this key does not exist,
+or does not have the correct capabilities applied to it, then automated OSD
 management will not function.
 
 ## Ceph MON Nodes
@@ -145,7 +145,7 @@ License and Authors
 Author:: Kyle Bader (<kyle.bader@dreamhost.com>)
 Author:: Carl Perry (<carl.perry@dreamhost.com>)
 
-Copyright:: 2011, 2012, New Dream Network DBA DreamHost.com
+Copyright:: 2011, 2012 DreamHost Web Hosting
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
