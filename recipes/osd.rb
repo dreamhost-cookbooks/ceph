@@ -1,9 +1,10 @@
 #
 # Author:: Kyle Bader <kyle.bader@dreamhost.com>
+# Author:: Carl Perry <carl.perry@dreamhost.com>
 # Cookbook Name:: ceph
 # Recipe:: osd
 #
-# Copyright 2011, DreamHost Web Hosting
+# Copyright 2011, 2012 DreamHost Web Hosting
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,13 +18,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-osd_id = nil
-
 include_recipe "apt"
 include_recipe "btrfs"
 include_recipe "parted"
-#include_recipe "supervisord"
 include_recipe "ceph::default"
+
+osd_id = nil
 
 # Need a script to start the OSD:
 # params: journal_dev data_dev osd_id mountpoint
@@ -46,7 +46,7 @@ def create_osd (osd_device, bootstrap_key, bootstrap_path, monmap_path)
   %x{if [ ! -f #{bootstrap_path} ]; then touch #{bootstrap_path}; ceph-authtool #{bootstrap_path} --name=client.bootstrap-osd --add-key='#{bootstrap_key}'; fi}
   #Chef::Log.info("About to download monmap to #{monmap_path}")
   %x{if [ ! -f #{monmap_path} ]; then ceph -k #{bootstrap_path} -n client.bootstrap-osd mon getmap -o #{monmap_path}; fi}
-  
+
   # This device set does not have an osd_id, so create it
   if (osd_device['osd_id'].nil?)
     # Get OSD key and id using bootstrap
@@ -76,8 +76,8 @@ def create_osd (osd_device, bootstrap_key, bootstrap_path, monmap_path)
   execute "Clearing journal device for #{osd_device['osd_id']}" do
     command "dd if=/dev/zero of=#{osd_device['journal_dev']} bs=1M count=4"
   end
-  
-  # Create symlinks for ceph config (temporary until we get supervisord)
+
+  # Create symlinks for ceph config (temporary until we get upstart)
   link "/srv/ceph/devices/osd.#{osd_device['osd_id']}.data" do
     to "#{osd_device['data_dev']}"
     link_type :symbolic
@@ -86,7 +86,7 @@ def create_osd (osd_device, bootstrap_key, bootstrap_path, monmap_path)
     to "#{osd_device['journal_dev']}"
     link_type :symbolic
   end
-  
+
   # Ensure the directory for the OSD mountpoint exists
   directory "/srv/ceph/osd/#{osd_device['osd_id']}" do
     owner "root"
@@ -94,19 +94,19 @@ def create_osd (osd_device, bootstrap_key, bootstrap_path, monmap_path)
     mode "0755"
     action :create
   end
-  
+
   # Mount the filesystem
   mount "/srv/ceph/osd/#{osd_device['osd_id']}" do
     device "/srv/ceph/devices/osd.#{osd_device['osd_id']}.data"
     options "noatime"
     action [:mount, :enable]
   end
-  
+
   # Make the ceph stuff on the new mountpoint
   execute "Ceph mkfs on the data filesystem for #{osd_device['osd_id']}" do
     command "ceph-osd --mkfs --mkkey -i #{osd_device['osd_id']} --monmap #{monmap_path}"
   end
-  
+
   # Create keyring for osd
   execute "Create keyring for #{osd_device['osd_id']}" do
     command "ceph --name client.bootstrap-osd --keyring #{bootstrap_path} \
@@ -115,30 +115,15 @@ def create_osd (osd_device, bootstrap_key, bootstrap_path, monmap_path)
                 osd 'allow *' \
                 mon 'allow rwx'"
   end
-  
+
   # Add to crushmap
   execute "Adding OSD #{osd_device['osd_id']} to crushmap at #{node['physical_location']['row']}:#{node['physical_location']['rack']}:#{node['hostname']}" do
     command "ceph --name client.bootstrap-osd --keyring #{bootstrap_path} \
                 osd crush add #{osd_device['osd_id']} osd.#{osd_device['osd_id']} 1 \
                 pool=default row=#{node['physical_location']['row']} rack=#{node['physical_location']['rack']} host=#{node['hostname']}"
   end
-  
-  # Make supervisord config
-  # Start via supervisord
-  # Reset status flag
+
   osd_device['status'] = "hold"
-  
-  # Monitor and start OSDs with supervisord
-  #node['ceph']['osd_devices'].each do |osd_device|
-  #  ceph = supervisord_program "osd #{osd_device['osd_id']}" do
-  #    command "osd #{osd_device['osd_id']}"
-  #    action [:supervise, :start]
-  #  end
-  #  ruby_block "start osd #{osd_device}" do
-  #    block do
-  #      ceph.run_action(:start)
-  #   end
-  #end
 end
 
 def destroy_osd (osd_device, adminkey_path)
@@ -151,7 +136,7 @@ def destroy_osd (osd_device, adminkey_path)
     command "service ceph stop osd.#{osd_device['osd_id']}"
     returns [0,1]
   end
-  
+
   # Mark this osd as unused
   if (! osd_device['osd_id'].nil?)
     # Take OSD down
@@ -185,15 +170,15 @@ def destroy_osd (osd_device, adminkey_path)
       returns [0,1]
     end
   end
-  
+
   # Remove the fstab entry
   mount "/srv/ceph/osd/#{osd_device['osd_id']}" do
     device "/srv/ceph/devices/osd.#{osd_device['osd_id']}.data"
     options "noatime"
     action [:disable]
   end
-  
-  # Remove symlinks for ceph config (temporary until we get supervisord)
+
+  # Remove symlinks for ceph config (temporary until we get upstart)
   link "/srv/ceph/devices/osd.#{osd_device['osd_id']}.data" do
     to "#{osd_device['data_dev']}"
     link_type :symbolic
@@ -210,31 +195,16 @@ def destroy_osd (osd_device, adminkey_path)
     command "umount /srv/ceph/osd/#{osd_device['osd_id']}"
     returns [0,1]
   end
-  
+
   # Destroy the directory for the OSD mountpoint exists
   directory "/srv/ceph/osd/#{osd_device['osd_id']}" do
     recursive true
     action :delete
   end
-  
-  
-  # Make supervisord config
-  # Start via supervisord
+
+
   # Reset status flag
   osd_device['status'] = "hold"
-  
-  # Monitor and start OSDs with supervisord
-  #node['ceph']['osd_devices'].each do |osd_device|
-  #  ceph = supervisord_program "osd #{osd_device['osd_id']}" do
-  #    command "osd #{osd_device['osd_id']}"
-  #    action [:supervise, :start]
-  #  end
-  #  ruby_block "start osd #{osd_device}" do
-  #    block do
-  #      ceph.run_action(:start)
-  #   end
-  #end
-
   osd_device['osd_id'] = nil
 
 end
@@ -276,7 +246,7 @@ else
   # Setup an admin key
   adminkey_path = "/tmp/adminkey-" + randomFileNameSuffix(7)
 
-  node.save # This should store the osd_id data before we head off into the fray1
+  node.save # This should store the osd_id data before we head off into the fray
 
   node['ceph']['osd_devices'].each do |osd_device|
     # Handle status switch: hold, recreate, create, destroy then call appropriate functions.

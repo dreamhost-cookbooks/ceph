@@ -1,9 +1,10 @@
 #
-# Author:: DreamHost System Engineers
+# Author:: Kyle Bader <kyle.bader@dreamhost.com>
+# Author:: Carl Perry <carl.perry@dreamhost.com>
 # Cookbook Name:: ceph
 # Recipe:: client
 #
-# Copyright 2011,2012 DreamHost
+# Copyright 2011, 2012 DreamHost Web Hosting
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,13 +23,11 @@ def randomFileNameSuffix (numberOfRandomchars)
   numberOfRandomchars.times { s << (65 + rand(26))  }
   s
 end
-        
-include_recipe "apt"
 
 logrotate_app "ceph-client" do
 	cookbook "logrotate"
 	path "/var/log/ceph/ceph.client.*.log"
-	frequency "daily"
+	frequency "size=200M"
 	rotate 9
 	create "644 root root"
 end

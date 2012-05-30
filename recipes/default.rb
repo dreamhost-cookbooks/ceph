@@ -3,7 +3,7 @@
 # Cookbook Name:: ceph
 # Recipe:: default
 #
-# Copyright 2011, DreamHost.com
+# Copyright 2011, 2012 DreamHost Web Hosting
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,14 +18,7 @@
 # limitations under the License.
 		        
 include_recipe "apt"
-
-apt_repository "ceph" do
-  uri "http://deploy.benjamin.dhobjects.net/ceph-#{node['lsb']['codename']}/combined/"
-  distribution node['lsb']['codename']
-  components ["main"]
-  key "https://raw.github.com/ceph/ceph/master/keys/autobuild.asc"
-  action :add
-end
+include_recipe "ceph::apt"
 
 packages = %w{
 	ceph
@@ -53,9 +46,23 @@ end
 logrotate_app "ceph" do
 	cookbook "logrotate"
 	path "/var/log/ceph/*.log"
-	frequency "daily"
+	frequency "size=200M"
 	rotate 9
 	create "644 root root"
+end
+
+directory "/etc/cron.hourly" do
+  owner "root"
+  group "root"
+  mode "0755"
+  action :create
+end
+
+cookbook_file "/etc/cron.hourly/logrotate" do
+  source "/etc/cron.daily/logrotate"
+  owner "root"
+  group "root"
+  mode "0755"
 end
 
 directory "/etc/ceph" do

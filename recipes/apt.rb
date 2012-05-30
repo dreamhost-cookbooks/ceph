@@ -2,7 +2,7 @@
 # Author:: Kyle Bader <kyle.bader@dreamhost.com>
 # Author:: Carl Perry <carl.perry@dreamhost.com>
 # Cookbook Name:: ceph
-# Recipe:: rados-client
+# Recipe:: apt
 #
 # Copyright 2011, 2012 DreamHost Web Hosting
 #
@@ -17,32 +17,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-		        
-include_recipe "apt"
-include_recipe "ceph::default"
 
-packages = %w{
-	librados2
-	librgw1
-	librbd1
-	ceph-common
-	ceph-common-dbg
-	radosgw
-	radosgw-dbg
-}
-
-packages.each do |pkg|
-	template "/etc/apt/preferences.d/" + pkg + "-1001" do
-		source "pin.erb"
-		variables({
-			:package => pkg
-		})
-	end
+apt_repository "ceph" do
+  uri "http://deploy.benjamin.dhobjects.net/ceph-#{node['lsb']['codename']}/combined/"
+  distribution node['lsb']['codename']
+  components ["main"]
+  key "https://raw.github.com/ceph/ceph/master/keys/autobuild.asc"
+  action :add
 end
 
-packages.each do |pkg|
-	package pkg do
-		version = node['ceph']['version']
-		action :upgrade
-	end
+apt_repository "ceph-apache2" do
+  uri "http://deploy.benjamin.dhobjects.net/apache2-#{node['lsb']['codename']}/combined/"
+  distribution node['lsb']['codename']
+  components ["main"]
+  key "https://raw.github.com/ceph/ceph/master/keys/autobuild.asc"
+  action :add
 end

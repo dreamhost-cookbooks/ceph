@@ -1,9 +1,10 @@
 #
 # Author:: Kyle Bader <kyle.bader@dreamhost.com>
+# Author:: Carl Perry <carl.perry@dreamhost.com>
 # Cookbook Name:: ceph
 # Recipe:: admin
 #
-# Copyright 2011, DreamHost.com
+# Copyright 2011, 2012 DreamHost Web Hosting
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,21 +19,13 @@
 # limitations under the License.
 		        
 include_recipe "apt"
-include_recipe "ceph::default"
 include_recipe "ceph::rados-rest"
-
-apt_repository "ceph" do
-  uri "http://deploy.benjamin.dhobjects.net/ceph-#{node['lsb']['codename']}/combined/"
-  distribution node['lsb']['codename']
-  components ["main"]
-  key "https://raw.github.com/ceph/ceph/master/keys/autobuild.asc"
-  action :add
-end
 
 packages = %w{ 
 	librbd1
 	ceph-common
 	ceph-common-dbg
+	python-simplejson
 }
 
 packages.each do |pkg|

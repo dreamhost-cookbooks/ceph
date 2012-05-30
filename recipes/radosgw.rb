@@ -1,9 +1,10 @@
 #
 # Author:: Kyle Bader <kyle.bader@dreamhost.com>
+# Author:: Carl Perry <carl.perry@dreamhost.com>
 # Cookbook Name:: ceph
 # Recipe:: radosgw
 #
-# Copyright 2011, DreamHost.com
+# Copyright 2011, 2012 DreamHost Web Hosting
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,17 +23,9 @@ def randomFileNameSuffix (numberOfRandomchars)
   numberOfRandomchars.times { s << (65 + rand(26))  }
   s
 end
-        
+
 include_recipe "apt"
 include_recipe "ceph::rados-rest"
-
-apt_repository "ceph-apache2" do
-  uri "http://deploy.benjamin.dhobjects.net/apache2-#{node['lsb']['codename']}/combined/"
-  distribution node['lsb']['codename']
-  components ["main"]
-  key "https://raw.github.com/ceph/ceph/master/keys/autobuild.asc"
-  action :add
-end
 
 apt_repository "ceph-fastcgi" do
   uri "http://deploy.benjamin.dhobjects.net/libapache-mod-fastcgi-#{node['lsb']['codename']}/combined/"
@@ -118,7 +111,7 @@ end
 logrotate_app "radosgw" do
 	cookbook "logrotate"
 	path "/var/log/ceph/ceph.client.radosgw.*.log"
-	frequency "daily"
+	frequency "size=200M"
 	rotate 9
 	create "644 root root"
 end

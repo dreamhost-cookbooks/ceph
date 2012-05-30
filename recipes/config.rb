@@ -1,9 +1,10 @@
 #
 # Author:: Kyle Bader <kyle.bader@dreamhost.com>
+# Author:: Carl Perry <carl.perry@dreamhost.com>
 # Cookbook Name:: ceph
-# Recipe:: default
+# Recipe:: config 
 #
-# Copyright 2011, DreamHost.com
+# Copyright 2011, 2012 DreamHost Web Hosting
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +17,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-		        
 
 execute "start ceph services" do
   command "service ceph start"
@@ -36,7 +36,7 @@ end
 
 # Get the list of monitors from Chef
 mon_addresses = []
-mon_pool = search(:node, "roles:ceph-mon AND chef_environment:#{node.chef_environment}") 
+mon_pool = search(:node, "roles:ceph-mon AND chef_environment:#{node.chef_environment}")
 mon_pool.each do |matching|
   if (node["network"][node["network"]["storage"]]["v6"].nil?)
     mon_addresses << node["network"][node["network"]["storage"]]["v4"]["addr"]["primary"]

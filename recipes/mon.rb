@@ -1,9 +1,10 @@
 #
 # Author:: Kyle Bader <kyle.bader@dreamhost.com>
+# Author:: Carl Perry <carl.perry@dreamhost.com>
 # Cookbook Name:: ceph
 # Recipe:: mon
 #
-# Copyright 2011, DreamHost.com
+# Copyright 2011, 2012 DreamHost Web Hosting
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,22 +18,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+include_recipe "apt"
+include_recipe "ceph::rados-rest"
+
 def randomFileNameSuffix (numberOfRandomchars)
   s = ""
   numberOfRandomchars.times { s << (65 + rand(26))  }
   s
-end
-		        
-include_recipe "apt"
-include_recipe "ceph::default"
-include_recipe "ceph::rados-rest"
-
-apt_repository "ceph" do
-  uri "http://deploy.benjamin.dhobjects.net/ceph-#{node['lsb']['codename']}/combined/"
-  distribution node['lsb']['codename']
-  components ["main"]
-  key "https://raw.github.com/ceph/ceph/master/keys/autobuild.asc"
-  action :add
 end
 
 packages = %w{ 
@@ -72,7 +64,7 @@ if (node['ceph']['mon_bootstrap'].nil? || node['ceph']['fsid'].nil?)
     mode '0400'
   end
 else
-  Chef::Log.info("The mon_bootsrap key and fsid are avaiable, MONs can be created")
+  Chef::Log.info("The mon_bootstrap key and fsid are avaiable, MONs can be created")
   # We have a cluster, help the user not shoot themself in the foot
   file "/etc/ceph/initial-cluster-setup.sh" do
     action :delete
