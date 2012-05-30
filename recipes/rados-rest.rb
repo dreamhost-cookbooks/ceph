@@ -21,7 +21,7 @@
 include_recipe "apt"
 include_recipe "ceph::default"
 
-packages = %w{
+ceph_packages = %w{
 	librados2
 	librgw1
 	librbd1
@@ -31,16 +31,11 @@ packages = %w{
 	radosgw-dbg
 }
 
-packages.each do |pkg|
-	template "/etc/apt/preferences.d/" + pkg + "-1001" do
-		source "pin.erb"
-		variables({
-			:package => pkg
-		})
+ceph_packages.each do |pkg|
+	apt_preference pkg do
+		pin "version #{node['ceph']['radosgw_version']}"
+		pin_priority "1001"
 	end
-end
-
-packages.each do |pkg|
 	package pkg do
 		version = node['ceph']['version']
 		action :upgrade

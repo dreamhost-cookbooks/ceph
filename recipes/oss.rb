@@ -17,17 +17,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-		        
+
 include_recipe "apt"
 include_recipe "ceph::radosgw"
 
-packages = %w{
-	obsync
-	python-cloudfiles
-}
-packages.each do |pkg|
-	package pkg do
-		version = node['ceph']['version']
-		action :upgrade
-	end
+apt_preference "obsync" do
+	pin "version #{ceph['node']['version]'}"
+	pin_priority "1001"
+end
+
+package "obsync" do
+	version = node['ceph']['version']
+	action :upgrade
+end
+
+package "python-cloudfiles" do
+	action :upgrade
 end

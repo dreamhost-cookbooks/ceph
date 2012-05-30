@@ -21,27 +21,25 @@
 include_recipe "apt"
 include_recipe "ceph::rados-rest"
 
-packages = %w{ 
+ceph_packages = %w{
 	librbd1
 	ceph-common
 	ceph-common-dbg
-	python-simplejson
 }
 
-packages.each do |pkg|
-    template "/etc/apt/preferences.d/" + pkg + "-1001" do
-        source "pin.erb"
-        variables({
-            :package => pkg 
-        })
-    end 
+package python-simplejson do
+	action :upgrade
 end
 
-packages.each do |pkg|
-    package pkg do
-        version = node['ceph']['version']
-        action :upgrade
-    end 
+ceph_packages.each do |pkg|
+	apt_preference pkg do
+		pin "version #{node['ceph']['version']}"
+		pin_priority "1001"
+	end
+	package pkg do
+		version = node['ceph']['version']
+		action :upgrade
+	end
 end
 
 if (node['ceph']['admin_key'].nil?) then

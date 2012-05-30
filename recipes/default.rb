@@ -20,7 +20,7 @@
 include_recipe "apt"
 include_recipe "ceph::apt"
 
-packages = %w{
+ceph_packages = %w{
 	ceph
 	ceph-dbg
 	ceph-common
@@ -28,19 +28,39 @@ packages = %w{
 	librbd1
 	librados2
 }
-packages.each do |pkg|
-	template "/etc/apt/preferences.d/" + pkg + "-1001" do
-		source "pin.erb"
-		variables({
-			:package => pkg
-		})
+
+ceph_packages.each do |pkg|
+	apt_preference do
+		pin "version #{node['ceph']['version']}"
+		pin_priority "1001"
+	end
+	package pkg do
+		version node['ceph']['version']
+		action :upgrade
 	end
 end
 
-packages.each do |pkg|
-	package pkg do
-		action :upgrade
+directories = %w{
+	/etc/cron.hourly
+	/var/run/ceph
+	/var/log/ceph
+	/etc/ceph
+}
+
+directories.each do |dir|
+	directory dir do
+		owner "root"
+		group "root"
+		mode "0755"
+		action :create
 	end
+end
+
+cookbook_file "/etc/cron.hourly/logrotate" do
+	source "/etc/cron.daily/logrotate"
+	owner "root"
+	group "root"
+	mode "0755"
 end
 
 logrotate_app "ceph" do
@@ -49,39 +69,4 @@ logrotate_app "ceph" do
 	frequency "size=200M"
 	rotate 9
 	create "644 root root"
-end
-
-directory "/etc/cron.hourly" do
-  owner "root"
-  group "root"
-  mode "0755"
-  action :create
-end
-
-cookbook_file "/etc/cron.hourly/logrotate" do
-  source "/etc/cron.daily/logrotate"
-  owner "root"
-  group "root"
-  mode "0755"
-end
-
-directory "/etc/ceph" do
-  owner "root"
-  group "root"
-  mode "0755"
-  action :create
-end
-
-directory "/var/run/ceph" do
-  owner "root"
-  group "root"
-  mode "0755"
-  action :create
-end
-
-directory "/var/log/ceph" do
-  owner "root"
-  group "root"
-  mode "0755"
-  action :create
 end

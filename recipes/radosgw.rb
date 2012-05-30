@@ -18,24 +18,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-def randomFileNameSuffix (numberOfRandomchars)
-  s = ""
-  numberOfRandomchars.times { s << (65 + rand(26))  }
-  s
-end
-
 include_recipe "apt"
 include_recipe "ceph::rados-rest"
 
-apt_repository "ceph-fastcgi" do
-  uri "http://deploy.benjamin.dhobjects.net/libapache-mod-fastcgi-#{node['lsb']['codename']}/combined/"
-  distribution node['lsb']['codename']
-  components ["main"]
-  key "https://raw.github.com/ceph/ceph/master/keys/autobuild.asc"
-  action :add
+def randomFileNameSuffix (numberOfRandomchars)
+	s = ""
+	numberOfRandomchars.times { s << (65 + rand(26))  }
+	s
 end
 
-packages = %w{
+apache_packages = %w{
 	apache2
 	apache2-mpm-worker
 	apache2-utils
@@ -43,32 +35,34 @@ packages = %w{
 	apache2.2-common
 }
 
-template "/etc/apt/preferences.d/libapache2-mod-fastcgi-1001.pref" do
-	source "fastcgi-pin.erb"
-	variables({
-		:package =>'libapache2-mod-fastcgi'
-	})
-end
-
-packages.each do |pkg|
-	template "/etc/apt/preferences.d/" + pkg + "-1001.pref" do
-		source "apache-pin.erb"
-		variables({
-			:package => pkg 
-		})
-	end 
-end
-
-include_recipe "apache2"
-
-packages.each do |pkg|
-	package pkg do 
+apache_packages.each do |pkg|
+	apt_preference pkg do
+		pin "version #{node['ceph']['apache2_version']}"
+		pin_priority "1001"
+	end
+	package pkg do
+		version node['ceph']['apache2_version']
 		action :upgrade
 	end
 end
 
+include_recipe "apache2"
+
+apt_repository "ceph-fastcgi" do
+	uri "http://deploy.benjamin.dhobjects.net/libapache-mod-fastcgi-#{node['lsb']['codename']}/combined/"
+	distribution node['lsb']['codename']
+	components ["main"]
+	key "https://raw.github.com/ceph/ceph/master/keys/autobuild.asc"
+	action :add
+end
+
+apt_preference "libapache2-mod-fastcgi" do
+	pin "version #{node['ceph']['fastcgi_version']
+	pin_priority "1001"
+end
+
 package 'libapache2-mod-fastcgi' do
-        action :upgrade
+	action :upgrade
 end
 
 service "radosgw" do
@@ -118,44 +112,43 @@ end
 
 # Setup the radosgw keyring
 if(!File.executable?('/usr/bin/ceph'))
-  Chef::Log.info("Ceph is not yet installed, will try keyring management again after that's done")
+	Chef::Log.info("Ceph is not yet installed, will try keyring management again after that's done")
 elsif (node['ceph']['admin_key'].nil?)
-  Chef::Log.warn("No admin_key key found, Client Keys cannot be managed")
+	Chef::Log.warn("No admin_key key found, Client Keys cannot be managed")
 elsif (!File.exists?("/etc/ceph/ceph.conf"))
-  Chef::Log.info("Ceph is not yet configured, will try keyring management again later")
+	Chef::Log.info("Ceph is not yet configured, will try keyring management again later")
 elsif (!File.exists?("/etc/ceph/client.radosgw.#{node['hostname']}.keyring"))
-  Chef::Log.info("Creating client key for radosgw.#{node['hostname']}")
-  bootstrap_path = "/tmp/bootstrap-" + randomFileNameSuffix(7)
-  %x{if [ ! -f #{bootstrap_path} ]; then touch #{bootstrap_path}; ceph-authtool #{bootstrap_path} --name=client.admin --add-key='#{node['ceph']['admin_key']}'; fi}
+	Chef::Log.info("Creating client key for radosgw.#{node['hostname']}")
+	bootstrap_path = "/tmp/bootstrap-" + randomFileNameSuffix(7)
+	%x{if [ ! -f #{bootstrap_path} ]; then touch #{bootstrap_path}; ceph-authtool #{bootstrap_path} --name=client.admin --add-key='#{node['ceph']['admin_key']}'; fi}
 
-  # client.radosgw.<%= node[:hostname] %>
-  # this keyring will be used by the radosgw
-  # instances
-  hostname = node["hostname"]
-  execute 'create client.radosgw.#{hostname} keyring' do
-    creates '/etc/ceph/client.radosgw.#{hostname}.keyring'
-    command <<-EOH
-set -e
-touch /etc/ceph/client.radosgw.#{hostname}.keyring.tmp
-ceph-authtool \
-  --create-keyring \
-  --gen-key \
-  --name=client.radosgw.#{hostname} \
-  /etc/ceph/client.radosgw.#{hostname}.keyring.tmp
-ceph --name client.admin --keyring #{bootstrap_path} \
-  auth add client.radosgw.#{hostname} \
-  -i /etc/ceph/client.radosgw.#{hostname}.keyring.tmp \
-  osd 'allow *' \
-  mon 'allow rwx'
-mv /etc/ceph/client.radosgw.#{hostname}.keyring.tmp /etc/ceph/client.radosgw.#{hostname}.keyring
-EOH
-    creates '/etc/ceph/client.radosgw.#{hostname}.keyring'
-    not_if {File.exists?("/etc/ceph/client.radosgw.#{hostname}.keyring")}
-  end
+	# client.radosgw.<%= node[:hostname] %>
+	# this keyring will be used by the radosgw
+	# instances
+	hostname = node["hostname"]
+	execute 'create client.radosgw.#{hostname} keyring' do
+		creates '/etc/ceph/client.radosgw.#{hostname}.keyring'
+		command <<-EOH
+			set -e
+			touch /etc/ceph/client.radosgw.#{hostname}.keyring.tmp
+			ceph-authtool \
+			  --create-keyring \
+			  --gen-key \
+			--name=client.radosgw.#{hostname} \
+			/etc/ceph/client.radosgw.#{hostname}.keyring.tmp
+			ceph --name client.admin --keyring #{bootstrap_path} \
+			auth add client.radosgw.#{hostname} \
+			-i /etc/ceph/client.radosgw.#{hostname}.keyring.tmp \
+			osd 'allow *' \
+			mon 'allow rwx'
+			mv /etc/ceph/client.radosgw.#{hostname}.keyring.tmp /etc/ceph/client.radosgw.#{hostname}.keyring
+		EOH
+		creates '/etc/ceph/client.radosgw.#{hostname}.keyring'
+		not_if {File.exists?("/etc/ceph/client.radosgw.#{hostname}.keyring")}
+	end
 
-  # Cleanup tempfiles
-  file bootstrap_path do
-    action :delete
-  end
-
-end #keyring
+	# Cleanup tempfiles
+	file bootstrap_path do
+		action :delete
+	end
+end

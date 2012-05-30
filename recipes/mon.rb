@@ -22,106 +22,102 @@ include_recipe "apt"
 include_recipe "ceph::rados-rest"
 
 def randomFileNameSuffix (numberOfRandomchars)
-  s = ""
-  numberOfRandomchars.times { s << (65 + rand(26))  }
-  s
+	s = ""
+	numberOfRandomchars.times { s << (65 + rand(26))  }
+	s
 end
 
-packages = %w{ 
+ceph_packages = %w{
 	librbd1
 	ceph-common
 	ceph-common-dbg
 }
 
-packages.each do |pkg|
-    template "/etc/apt/preferences.d/" + pkg + "-1001" do
-        source "pin.erb"
-        variables({
-            :package => pkg 
-        })
-    end 
-end
-
-packages.each do |pkg|
-    package pkg do
-        version = node['ceph']['version']
-        action :upgrade
-    end 
+ceph_packages.each do |pkg|
+	apt_preference pkg do
+		pin "version #{node['ceph']['version']}"
+		pin_priority "1001"
+	end
+	package pkg do
+		version = node['ceph']['version']
+		action :upgrade
+	end
 end
 
 # Automated monitor creation
 if (node['ceph']['mon_bootstrap'].nil? || node['ceph']['fsid'].nil?)
-  Chef::Log.warn("No mon_bootstrap key and/or fsid found, run /etc/ceph/initial-cluster-setup.sh")
-  template '/etc/ceph/initial-cluster-setup.sh' do
-    source 'inital-cluster-setup.sh.erb'
-    mode '0500'
-    variables(
-              :node => node
-              )
-  end
-  cookbook_file '/etc/ceph/chef-crushmap.txt' do
-    source 'crushmap.txt'
-    mode '0400'
-  end
+	Chef::Log.warn("No mon_bootstrap key and/or fsid found, run /etc/ceph/initial-cluster-setup.sh")
+	template '/etc/ceph/initial-cluster-setup.sh' do
+	source 'inital-cluster-setup.sh.erb'
+	mode '0500'
+	variables(
+		:node => node
+	)
+	end
+	cookbook_file '/etc/ceph/chef-crushmap.txt' do
+		source 'crushmap.txt'
+		mode '0400'
+	end
 else
-  Chef::Log.info("The mon_bootstrap key and fsid are avaiable, MONs can be created")
-  # We have a cluster, help the user not shoot themself in the foot
-  file "/etc/ceph/initial-cluster-setup.sh" do
-    action :delete
-  end
-  file "/etc/ceph/chef-crushmap.txt" do
-    action :delete
-  end
-  # Does this monitor already exist?
-  if (! File.exists?("/srv/ceph/mon.#{node["hostname"]}/magic") )
-    Chef::Log.info("Going to create ceph MON #{node['hostname']}")
-    # Setup bootstrap keyring
-    bootstrap_key = node['ceph']['mon_bootstrap']
-    bootstrap_path = "/tmp/bootstrap-mon-" + randomFileNameSuffix(7)
-    %x{if [ ! -f #{bootstrap_path} ]; then touch #{bootstrap_path}; ceph-authtool #{bootstrap_path} --name=mon. --add-key='#{bootstrap_key}'; fi}
+	Chef::Log.info("The mon_bootstrap key and fsid are avaiable, MONs can be created")
+	# We have a cluster, help the user not shoot themself in the foot
+	file "/etc/ceph/initial-cluster-setup.sh" do
+		action :delete
+	end
+	file "/etc/ceph/chef-crushmap.txt" do
+		action :delete
+	end
+	# Does this monitor already exist?
+	if (! File.exists?("/srv/ceph/mon.#{node["hostname"]}/magic") )
+		Chef::Log.info("Going to create ceph MON #{node['hostname']}")
+		# Setup bootstrap keyring
+		bootstrap_key = node['ceph']['mon_bootstrap']
+		bootstrap_path = "/tmp/bootstrap-mon-" + randomFileNameSuffix(7)
+		%x{if [ ! -f #{bootstrap_path} ]; then touch #{bootstrap_path}; ceph-authtool #{bootstrap_path} --name=mon. --add-key='#{bootstrap_key}'; fi}
 
-    # Create a temporary monmap
-    monmap_path = "/tmp/monmap-" + randomFileNameSuffix(7)
-    execute "Build empty monmap" do
-      command "monmaptool --create #{monmap_path} --fsid #{node['ceph']['fsid']}"
-    end
+		# Create a temporary monmap
+		monmap_path = "/tmp/monmap-" + randomFileNameSuffix(7)
 
-     Get the list of monitors from Chef to build a monmap
-    mon_list = Array.new
-    mon_pool = search(:node, "roles:ceph-mon AND chef_environment:#{node.chef_environment}")
-    mon_pool.each do |matching|
-      if (node["fqdn"] != matching["fqdn"])
-        if (matching["network"][node["network"]["storage"]]["v6"]["addr"]["primary"].nil?) then
-#          execute "Adding #{matching['hostname']} to monmap using IPv4" do
-#            command "monmaptool --add #{matching['hostname']} [#{matching["network"][node["network"]["storage"]]["v4"]["addr"]["primary"]}]:6789 #{monmap_path}"
-#          end
-          mon_list << "#{matching["network"][node["network"]["storage"]]["v4"]["addr"]["primary"]}:6789"
-        else
-#          execute "Adding #{matching['hostname']} to monmap using IPv6" do
-#            command "monmaptool --add #{matching['hostname']} [#{matching["network"][node["network"]["storage"]]["v6"]["addr"]["primary"]}]:6789 #{monmap_path}"
-#          end
-          mon_list << "[#{matching["network"][node["network"]["storage"]]["v6"]["addr"]["primary"]}]:6789"
-        end
-      end
-    end
+		execute "Build empty monmap" do
+			command "monmaptool --create #{monmap_path} --fsid #{node['ceph']['fsid']}"
+		end
 
-    execute "Bootstrap Monitor" do
-#      command "ceph-mon -i #{node['hostname']} --mkfs --monmap #{monmap_path} --fsid #{node['ceph']['fsid']} --keyring #{bootstrap_path}"
-      command "ceph-mon -i #{node['hostname']} --mkfs --fsid #{node['ceph']['fsid']} --keyring #{bootstrap_path} -m #{mon_list.join(",")}"
-    end
+		# Get the list of monitors from Chef to build a monmap
+		mon_list = Array.new
+		mon_pool = search(:node, "roles:ceph-mon AND chef_environment:#{node.chef_environment}")
+		mon_pool.each do |matching|
+			if (node["fqdn"] != matching["fqdn"])
+				if (matching["network"][node["network"]["storage"]]["v6"]["addr"]["primary"].nil?) then
+#					execute "Adding #{matching['hostname']} to monmap using IPv4" do
+#						command "monmaptool --add #{matching['hostname']} [#{matching["network"][node["network"]["storage"]]["v4"]["addr"]["primary"]}]:6789 #{monmap_path}"
+#					end
+					mon_list << "#{matching["network"][node["network"]["storage"]]["v4"]["addr"]["primary"]}:6789"
+				else
+#					execute "Adding #{matching['hostname']} to monmap using IPv6" do
+#						command "monmaptool --add #{matching['hostname']} [#{matching["network"][node["network"]["storage"]]["v6"]["addr"]["primary"]}]:6789 #{monmap_path}"
+#					end
+					mon_list << "[#{matching["network"][node["network"]["storage"]]["v6"]["addr"]["primary"]}]:6789"
+				end
+			end
+		end
 
-    file bootstrap_path do
-      action :delete
-    end
+		execute "Bootstrap Monitor" do
+#			command "ceph-mon -i #{node['hostname']} --mkfs --monmap #{monmap_path} --fsid #{node['ceph']['fsid']} --keyring #{bootstrap_path}"
+			command "ceph-mon -i #{node['hostname']} --mkfs --fsid #{node['ceph']['fsid']} --keyring #{bootstrap_path} -m #{mon_list.join(",")}"
+		end
 
-    file monmap_path do
-      action :delete
-    end
+		file bootstrap_path do
+			action :delete
+		end
 
-    execute "Enable Monitor" do
-      command "service ceph start mon.#{node['hostname']}"
-    end
-  else
-    Chef::Log.info("No ceph MON needed to be created")
-  end
+		file monmap_path do
+			action :delete
+		end
+
+		execute "Enable Monitor" do
+			command "service ceph start mon.#{node['hostname']}"
+		end
+	else
+		Chef::Log.info("No ceph MON needed to be created")
+	end
 end
