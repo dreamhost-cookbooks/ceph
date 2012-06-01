@@ -37,31 +37,24 @@ apache_packages = %w{
 
 apache_packages.each do |pkg|
 	apt_preference pkg do
-		pin "version #{node['ceph']['apache2_version']}"
+		pin "version #{node['ceph']['apache']['version']}"
 		pin_priority "1001"
 	end
 	package pkg do
-		version node['ceph']['apache2_version']
+		version node['ceph']['apache']['version']
 		action :upgrade
 	end
 end
 
 include_recipe "apache2"
 
-apt_repository "ceph-fastcgi" do
-	uri "http://deploy.benjamin.dhobjects.net/libapache-mod-fastcgi-#{node['lsb']['codename']}/combined/"
-	distribution node['lsb']['codename']
-	components ["main"]
-	key "https://raw.github.com/ceph/ceph/master/keys/autobuild.asc"
-	action :add
-end
-
 apt_preference "libapache2-mod-fastcgi" do
-	pin "version #{node['ceph']['fastcgi_version']
+	pin "version #{node['ceph']['fastcgi']['version']
 	pin_priority "1001"
 end
 
 package 'libapache2-mod-fastcgi' do
+	version node['ceph']['fastcgi']['version']
 	action :upgrade
 end
 
@@ -87,9 +80,9 @@ end
 
 template "/etc/apache2/sites-available/rgw.conf" do
 	source "rgw.conf.erb"
-	mode 0400
 	owner "root"
 	group "root"
+	mode "0400"
 	variables(
 		:listen_addr => listen_addr
 	)

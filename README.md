@@ -39,6 +39,7 @@ ATTRIBUTES
 
 ## All Ceph Nodes:
 
+* node[:ceph][:repo_uri]
 * node[:ceph][:version]
 
 All nodes will look to the Ceph version attribute to specify which package
@@ -105,10 +106,14 @@ this does not exist then automate MON mangement will not function.
 
 ## Ceph Rados Gateway:
 
+* node[:ceph][:apache2_repo_uri]
+* node[:ceph][:fastcgi_repo_uri]
 * node[:ceph][:radosgw][:admin_email]
 * node[:ceph][:radosgw][:api_fqdn]
 * node[:ceph][:radosgw][:listen_addr]
 * node[:ceph][:radosgw][:version]
+* node[:ceph][:apache][:version]
+* node[:ceph][:fastcgi][:version]
 
 TEMPLATES
 =========
