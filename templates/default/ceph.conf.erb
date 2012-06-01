@@ -3,16 +3,16 @@
 	auth supported = cephx
 	ms bind ipv6 = true
 	keyring = /etc/ceph/$name.keyring
-	log file = /var/log/ceph/$id.log
-<% if (! node["ceph"]["debug"].nil?) then -%>
-<% end -%>
 
 [mon]
 	mon data = /srv/ceph/mon.$id
 	osd pool default size = 3
 	osd pool default crush rule = 0
 	mon osd down out interval = 600
+	max open files = 4096
+<% if (! node["ceph"]["debug"].nil?) then -%>
 	debug ms = 1
+<% end -%>
 <% if (! node["ceph"]["debug"].nil?) then -%>
 <%   if (! node["ceph"]["debug"]["mon"].nil?) then -%>
 	debug mon = <%= node["ceph"]["debug"]["mon"] %>
@@ -22,7 +22,6 @@
 <% @mon_pool.each do |mon| -%>
 [mon.<%= mon[:hostname] %>]
 	host = <%= mon[:hostname] %>
-	max open files = 4096
 	<% if (mon["network"][node["network"]["storage"]]["v6"]["addr"]["primary"].nil?) then -%>
 	mon addr = <%= mon["network"][node["network"]["storage"]]["v4"]["addr"]["primary"] %>:6789
 	<% else -%>
@@ -45,9 +44,10 @@
 	osd data = /srv/ceph/osd/$id
 	filestore flusher = false
 	max open files = 4096
-	debug ms = 1
 	admin socket = /var/run/ceph/ceph-$name.asok
 <% if (! node["ceph"]["debug"].nil?) then -%>
+	debug ms = 1
+<% end -%>
 <%   if (! node["ceph"]["debug"]["osd"].nil?) then -%>
 	debug osd = <%= node["ceph"]["debug"]["osd"] %>
 <%   end -%>
