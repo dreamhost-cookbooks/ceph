@@ -34,10 +34,10 @@ apt_repository "ceph-apache2" do
 	action :add
 end
 
-apt_repository "ceph-fastcgi" do~
+apt_repository "ceph-fastcgi" do
 	uri node['ceph']['fastcgi_repo_uri']
-	distribution node['lsb']['codename']~
-	components ["main"]~
-	key "https://raw.github.com/ceph/ceph/master/keys/autobuild.asc"~
+	distribution node['lsb']['codename']
+	components ["main"]
+	key "https://raw.github.com/ceph/ceph/master/keys/autobuild.asc"
 	action :add
 end

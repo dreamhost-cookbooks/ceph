@@ -47,7 +47,6 @@
 	admin socket = /var/run/ceph/ceph-$name.asok
 <% if (! node["ceph"]["debug"].nil?) then -%>
 	debug ms = 1
-<% end -%>
 <%   if (! node["ceph"]["debug"]["osd"].nil?) then -%>
 	debug osd = <%= node["ceph"]["debug"]["osd"] %>
 <%   end -%>
@@ -62,11 +61,11 @@
 	public addr = [<%= node["network"][node["network"]["storage"]]["v6"]["addr"]["primary"] %>]
 	<% end -%>
 	<% if (! node["network"]["storage-back"].nil?) then -%>
-	<% if (node["network"][node["network"]["storage-back"]]["v6"]["addr"]["primary"].nil?) then -%>
+	<%   if (node["network"][node["network"]["storage-back"]]["v6"]["addr"]["primary"].nil?) then -%>
 	cluster addr = <%= node["network"][node["network"]["storage-back"]]["v4"]["addr"]["primary"] %>
-	<% else -%>
+	<%   else -%>
 	cluster addr = [<%= node["network"][node["network"]["storage-back"]]["v6"]["addr"]["primary"] %>]
-	<% end -%>
+	<%   end -%>
 	<% end -%>
 
 <% end -%>
@@ -80,12 +79,12 @@
 	rgw swift url prefix = swift
 	rgw dns name = <%= node["ceph"]["api_fqdn"] %>
 	rgw cache lru size = 10000
-<% if (! node["ceph"]["debug"].nil?) then -%>
-<%   if (! node["ceph"]["debug"]["osd"].nil?) then -%>
+<%   if (! node["ceph"]["debug"].nil?) then -%>
+<%     if (! node["ceph"]["debug"]["osd"].nil?) then -%>
 	debug rgw = <%= node["ceph"]["debug"]["rgw"] %>
 	debug objecter = <%= node["ceph"]["debug"]["rgw"] %>
+<%     end -%>
 <%   end -%>
 <% end -%>
-<% end %>
 
 # This must be the last line and will be ignored

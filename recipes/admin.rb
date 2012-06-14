@@ -27,7 +27,7 @@ ceph_packages = %w{
 	ceph-common-dbg
 }
 
-package python-simplejson do
+package "python-simplejson" do
 	action :upgrade
 end
 

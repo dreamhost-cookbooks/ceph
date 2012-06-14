@@ -30,7 +30,7 @@ ceph_packages = %w{
 }
 
 ceph_packages.each do |pkg|
-	apt_preference do
+	apt_preference pkg do
 		pin "version #{node['ceph']['version']}"
 		pin_priority "1001"
 	end
