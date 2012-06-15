@@ -21,12 +21,12 @@ include_recipe "apt"
 include_recipe "ceph::apt"
 
 ceph_packages = %w{
-	ceph
-	ceph-dbg
+	librados2
+	librbd1
 	ceph-common
 	ceph-common-dbg
-	librbd1
-	librados2
+	ceph
+	ceph-dbg
 }
 
 ceph_packages.each do |pkg|
@@ -57,7 +57,7 @@ directories.each do |dir|
 end
 
 cookbook_file "/etc/cron.hourly/logrotate" do
-	source "/etc/cron.daily/logrotate"
+	source "logrotate"
 	owner "root"
 	group "root"
 	mode "0755"

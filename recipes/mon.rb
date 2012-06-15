@@ -27,23 +27,6 @@ def randomFileNameSuffix (numberOfRandomchars)
 	s
 end
 
-ceph_packages = %w{
-	librbd1
-	ceph-common
-	ceph-common-dbg
-}
-
-ceph_packages.each do |pkg|
-	apt_preference pkg do
-		pin "version #{node['ceph']['version']}"
-		pin_priority "1001"
-	end
-	package pkg do
-		version = node['ceph']['version']
-		action :upgrade
-	end
-end
-
 # Automated monitor creation
 if (node['ceph']['mon_bootstrap'].nil? || node['ceph']['fsid'].nil?)
 	Chef::Log.warn("No mon_bootstrap key and/or fsid found, run /etc/ceph/initial-cluster-setup.sh")

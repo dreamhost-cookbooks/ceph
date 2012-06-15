@@ -21,26 +21,10 @@
 include_recipe "apt"
 include_recipe "ceph::rados-rest"
 
-ceph_packages = %w{
-	librbd1
-	ceph-common
-	ceph-common-dbg
-}
-
 package "python-simplejson" do
 	action :upgrade
 end
 
-ceph_packages.each do |pkg|
-	apt_preference pkg do
-		pin "version #{node['ceph']['version']}"
-		pin_priority "1001"
-	end
-	package pkg do
-		version = node['ceph']['version']
-		action :upgrade
-	end
-end
 
 if (node['ceph']['admin_key'].nil?) then
   Chef::Log.info("No admin key available for creating keyring")

@@ -33,7 +33,7 @@ ceph_packages = %w{
 
 ceph_packages.each do |pkg|
 	apt_preference pkg do
-		pin "version #{node['ceph']['radosgw_version']}"
+		pin "version #{node['ceph']['radosgw']['version']}"
 		pin_priority "1001"
 	end
 	package pkg do
