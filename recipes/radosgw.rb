@@ -61,7 +61,7 @@ end
 service "radosgw" do
 	service_name "radosgw"
 	supports :restart => true
-	action[:enable,:start]
+	action [:enable, :start]
 end
 
 apache_module "fastcgi" do
