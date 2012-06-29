@@ -91,6 +91,13 @@ template "/etc/apache2/sites-available/rgw.conf" do
 	end
 end
 
+file "/etc/logrotate.d/apache2" do
+	source "logrotate-apache2"
+	owner "root"
+	group "root"
+	mode "0400"
+end
+
 apache_site "rgw.conf" do
 	enable enable_setting
 end
