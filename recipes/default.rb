@@ -29,6 +29,8 @@ ceph_packages = %w{
 	ceph-dbg
 }
 
+# We can't pin and install in the same loop because of depends
+
 ceph_packages.each do |pkg|
 	apt_preference pkg do
 		pin "version #{node['ceph']['version']}"
@@ -36,7 +38,8 @@ ceph_packages.each do |pkg|
 	end
 	package pkg do
 		version node['ceph']['version']
-		action :upgrade
+		action :install
+		options "--no-install-recommends -o Dpkg::Options::='--force-confold'"
 	end
 end
 

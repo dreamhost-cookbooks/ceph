@@ -27,7 +27,7 @@ apt_repository "ceph" do
 end
 
 apt_repository "ceph-apache2" do
-	uri node['ceph']['apache2_repo_uri']
+	uri node['ceph']['apache2']['repo_uri']
 	distribution node['lsb']['codename']
 	components ["main"]
 	key "https://raw.github.com/ceph/ceph/master/keys/autobuild.asc"
@@ -35,7 +35,7 @@ apt_repository "ceph-apache2" do
 end
 
 apt_repository "ceph-fastcgi" do
-	uri node['ceph']['fastcgi_repo_uri']
+	uri node['ceph']['fastcgi']['repo_uri']
 	distribution node['lsb']['codename']
 	components ["main"]
 	key "https://raw.github.com/ceph/ceph/master/keys/autobuild.asc"

@@ -104,3 +104,16 @@ else
 		Chef::Log.info("No ceph MON needed to be created")
 	end
 end
+
+cookbook_file "/usr/bin/ceph-cluster-health.pl" do
+	source "ceph-cluster-health.pl"
+	owner "root"
+	group "root"
+	mode "0755"
+end
+
+cron "ceph-cluster-health" do
+	minute "*/5"
+	command "/usr/bin/ceph-cluster-health.pl '#{node['ceph']['warning_email']}' '#{node['ceph']['critical_email']}' '#{node['ceph']['cluster_name']}' > /dev/null"
+	only_if do File.exist?("/usr/bin/ceph-cluster-health.pl") end
+end

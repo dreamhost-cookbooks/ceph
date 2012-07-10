@@ -22,13 +22,13 @@ include_recipe "apt"
 include_recipe "ceph::radosgw"
 
 apt_preference "obsync" do
-	pin "version #{ceph['node']['version]'}"
+	pin "version #{node['ceph']['version']}"
 	pin_priority "1001"
 end
 
 package "obsync" do
 	version = node['ceph']['version']
-	action :upgrade
+	action :install
 end
 
 package "python-cloudfiles" do

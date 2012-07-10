@@ -37,28 +37,45 @@ apache_packages = %w{
 
 apache_packages.each do |pkg|
 	apt_preference pkg do
-		pin "version #{node['ceph']['apache']['version']}"
+		pin "version #{node['ceph']['apache2']['version']}"
 		pin_priority "1001"
 	end
 	package pkg do
-		version node['ceph']['apache']['version']
-		action :upgrade
+		version node['ceph']['apache2']['version']
+		action :install
 	end
 end
 
 include_recipe "apache2"
 
 apt_preference "libapache2-mod-fastcgi" do
-	pin "version #{node['ceph']['fastcgi']['version']
+	pin "version #{node['ceph']['fastcgi']['version']}"
 	pin_priority "1001"
 end
 
 package 'libapache2-mod-fastcgi' do
 	version node['ceph']['fastcgi']['version']
-	action :upgrade
+	action :install
+end
+
+directory "/var/lib/ceph/radosgw/ceph-radosgw.#{node['hostname']}" do
+	owner "root"
+	group "root"
+	mode "755"
+	recursive true
+	action :create
+end
+
+file "/var/lib/ceph/radosgw/ceph-radosgw.#{node['hostname']}/done" do
+	owner "root"
+	group "root"
+	mode "0644"
+	action :touch
 end
 
 service "radosgw" do
+#	provider Chef::Provider::Service::Upstart
+	#service_name "radosgw-all"
 	service_name "radosgw"
 	supports :restart => true
 	action [:enable, :start]
@@ -91,7 +108,7 @@ template "/etc/apache2/sites-available/rgw.conf" do
 	end
 end
 
-file "/etc/logrotate.d/apache2" do
+cookbook_file "/etc/logrotate.d/apache2" do
 	source "logrotate-apache2"
 	owner "root"
 	group "root"

@@ -17,27 +17,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-		        
+
 include_recipe "apt"
 include_recipe "ceph::default"
 
-ceph_packages = %w{
+radosgw_packages = %w{
 	librados2
-	librgw1
-	librbd1
-	ceph-common
-	ceph-common-dbg
 	radosgw
 	radosgw-dbg
 }
 
-ceph_packages.each do |pkg|
+radosgw_packages.each do |pkg|
 	apt_preference pkg do
-		pin "version #{node['ceph']['radosgw']['version']}"
+		pin "version #{node['ceph']['version']}"
 		pin_priority "1001"
 	end
 	package pkg do
-		version = node['ceph']['version']
-		action :upgrade
+		version node['ceph']['radosgw']['version']
+		action :install
+		options "-o Dpkg::Options::='--force-confold'"
 	end
 end
