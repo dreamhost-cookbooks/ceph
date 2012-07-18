@@ -3,8 +3,8 @@
 use strict;
 use warnings;
 
-my $alert_email = shift || &usage;
 my $warning_email = shift || &usage;
+my $critical_email = shift || &usage;
 my $cluster = shift || &usage;
 
 my @health = qx{ /usr/bin/ceph health --debug-ms 0 };
@@ -17,7 +17,7 @@ foreach my $line (@health) {
 		&send_alert($warning_email,join('', @health));
 	}elsif ( $line =~ /HEALTH_CRIT/ ) {
 		print "Ceph health CRITICAL!\n";
-		&send_alert($alert_email,join('', @health));
+		&send_alert($critical_email,join('', @health));
 	}
 }
 
