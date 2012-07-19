@@ -31,6 +31,14 @@ package "obsync" do
 	action :install
 end
 
-package "python-cloudfiles" do
-	action :upgrade
+packges %w{
+	python-celery
+	python-cloudfiles
+	python-redis
+}
+
+packages.each do |pkg|
+	package pkg do
+		action :upgrade
+	end
 end
