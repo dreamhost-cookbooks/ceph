@@ -19,7 +19,6 @@
 # limitations under the License.
 
 include_recipe "apt"
-include_recipe "ceph::radosgw"
 
 apt_preference "obsync" do
 	pin "version #{node['ceph']['version']}"
@@ -31,6 +30,14 @@ package "obsync" do
 	action :install
 end
 
-package "python-cloudfiles" do
-	action :upgrade
+packages = %w{
+	python-celery
+	python-cloudfiles
+	python-redis
+}
+
+packages.each do |pkg|
+	package pkg do
+		action :upgrade
+	end
 end
