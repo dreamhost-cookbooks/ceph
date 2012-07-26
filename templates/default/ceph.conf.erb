@@ -6,17 +6,8 @@
 
 [mon]
 	mon data = /srv/ceph/mon.$id
-	osd pool default size = 3
-	osd pool default crush rule = 0
-	mon osd down out interval = 600
-	max open files = 4096
-<% if (! node["ceph"]["debug"].nil?) then -%>
-	debug ms = 1
-<% end -%>
-<% if (! node["ceph"]["debug"].nil?) then -%>
-<%   if (! node["ceph"]["debug"]["mon"].nil?) then -%>
-	debug mon = <%= node["ceph"]["debug"]["mon"] %>
-<%   end -%>
+<% node["ceph"]["config"]["mon"].each do |key, value| -%>
+	<%= key %> = <%= value %>
 <% end -%>
 
 <% @mon_pool.each do |mon| -%>
@@ -27,14 +18,11 @@
 	<% else -%>
 	mon addr = [<%= mon["network"][node["network"]["storage"]]["v6"]["addr"]["primary"] %>]:6789
 	<% end -%>
-
 <% end -%>
 
 [mds]
-<% if (! node["ceph"]["debug"].nil?) then -%>
-<%   if (! node["ceph"]["debug"]["mds"].nil?) then -%>
-	debug mds = <%= node["ceph"]["debug"]["mds"] %>
-<%   end -%>
+<% node["ceph"]["config"]["mds"].each do |key, value| -%>
+	<%= key %> = <%= value %>
 <% end -%>
 
 [osd]
@@ -42,16 +30,9 @@
 	osd journal = /srv/ceph/devices/osd.$id.journal
 	keyring = /srv/ceph/osd/$id/keyring
 	osd data = /srv/ceph/osd/$id
-	filestore flusher = false
-	max open files = 4096
 	admin socket = /var/run/ceph/ceph-$name.asok
-        osd map cache size = 50
-        osd recovery max active = 1
-<% if (! node["ceph"]["debug"].nil?) then -%>
-	debug ms = 1
-<%   if (! node["ceph"]["debug"]["osd"].nil?) then -%>
-	debug osd = <%= node["ceph"]["debug"]["osd"] %>
-<%   end -%>
+<% node["ceph"]["config"]["osd"].each do |key, value| -%>
+	<%= key %> = <%= value %>
 <% end -%>
 
 <% @osd_devices.each do |osd_device| -%>
@@ -76,16 +57,11 @@
 [client.radosgw.<%= node[:hostname] %>]
 	log file = /var/log/ceph/$id.log
 	rgw socket path = /var/run/ceph/radosgw.client.radosgw.<%= node[:hostname] %>
-	rgw cache enabled = 1
 	rgw swift url = https://<%= node["ceph"]["api_fqdn"] %>
 	rgw swift url prefix = swift
 	rgw dns name = <%= node["ceph"]["api_fqdn"] %>
-	rgw cache lru size = 10000
-<%   if (! node["ceph"]["debug"].nil?) then -%>
-<%     if (! node["ceph"]["debug"]["osd"].nil?) then -%>
-	debug rgw = <%= node["ceph"]["debug"]["rgw"] %>
-	debug objecter = <%= node["ceph"]["debug"]["rgw"] %>
-<%     end -%>
+	<% node["ceph"]["config"]["rgw"].each do |key, value| -%>
+	<%= key %> = <%= value %>
 <%   end -%>
 <% end -%>
 
