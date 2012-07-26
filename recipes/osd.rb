@@ -120,7 +120,7 @@ def create_osd (osd_device, bootstrap_key, bootstrap_path, monmap_path)
 	# Add to crushmap
 	execute "Adding OSD #{osd_device['osd_id']} to crushmap at #{node['physical_location']['row']}:#{node['physical_location']['rack']}:#{node['hostname']}" do
 		command "ceph --name client.bootstrap-osd --keyring #{bootstrap_path} \
-				osd crush set #{osd_device['osd_id']} osd.#{osd_device['osd_id']} 1 \
+				osd crush set #{osd_device['osd_id']} osd.#{osd_device['osd_id']} 0 \
 				pool=default row=#{node['physical_location']['row']} rack=#{node['physical_location']['rack']} host=#{node['hostname']}"
 	end
 
