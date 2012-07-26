@@ -45,6 +45,8 @@
 	filestore flusher = false
 	max open files = 4096
 	admin socket = /var/run/ceph/ceph-$name.asok
+        osd map cache size = 50
+        osd recovery max active = 1
 <% if (! node["ceph"]["debug"].nil?) then -%>
 	debug ms = 1
 <%   if (! node["ceph"]["debug"]["osd"].nil?) then -%>
