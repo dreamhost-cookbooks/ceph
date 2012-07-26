@@ -18,11 +18,14 @@
 	<% else -%>
 	mon addr = [<%= mon["network"][node["network"]["storage"]]["v6"]["addr"]["primary"] %>]:6789
 	<% end -%>
+
 <% end -%>
 
 [mds]
-<% node["ceph"]["config"]["mds"].each do |key, value| -%>
+<% if (! node["ceph"]["config"]["mds"].nil?) -%>
+	<% node["ceph"]["config"]["mds"].each do |key, value| -%>
 	<%= key %> = <%= value %>
+<%   end -%>
 <% end -%>
 
 [osd]
