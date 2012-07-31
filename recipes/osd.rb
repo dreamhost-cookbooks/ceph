@@ -157,7 +157,7 @@ def destroy_osd (osd_device, adminkey_path)
 		# Remove from crushmap
 		execute "Removing OSD #{osd_device['osd_id']} to crushmap at #{node['physical_location']['row']}:#{node['physical_location']['rack']}:#{node['hostname']}" do
 			command "ceph --name client.admin --keyring #{adminkey_path} \
-					osd crush remove #{osd_device['osd_id']}"
+					osd crush remove osd.#{osd_device['osd_id']}"
 			returns [0,1]
 		end
 
