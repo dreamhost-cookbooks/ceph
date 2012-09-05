@@ -25,6 +25,9 @@ package "python-simplejson" do
 	action :upgrade
 end
 
+package "python-tz" do
+	action :upgrade
+end
 
 if (node['ceph']['admin_key'].nil?) then
   Chef::Log.info("No admin key available for creating keyring")
