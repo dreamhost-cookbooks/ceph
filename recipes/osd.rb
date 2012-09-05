@@ -256,7 +256,7 @@ else
 			destroy_osd(osd_device, adminkey_path)
 		elsif (osd_device['status'] == "recreate" && /^[0-9]+$/.match(osd_device['osd_id']))
 			Chef::Log.info("About to recreate OSD #{osd_device['osd_id']} by destroying then creating it")
-			destroy_osd(osd_device, adminkey_oath)
+			destroy_osd(osd_device, adminkey_path)
 			create_osd(osd_device, bootstrap_key, bootstrap_path, monmap_path)
 		end #status==create
 		# Prevent bum chef runs from messing up the works.
