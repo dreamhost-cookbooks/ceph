@@ -4,6 +4,11 @@ FastCgiExternalServer /var/www/dummyradosgw.fcgi -socket /var/run/ceph/radosgw.c
 LogFormat "%{X-Forwarded-For}i %{Host}i %u %t \"%r\" %>s %B %I \"%{Referer}i\" \"%{User-Agent}i\" %D" proxy_combined
 LogFormat "%{X-Forwarded-For}i %h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" proxy_debug
 
+ExtendedStatus on
+<Location /mod_status>
+  SetHandler server-status
+</Location>
+
 <VirtualHost <%= @listen_addr %>:80>
   ServerName <%= node[:ceph][:api_fqdn] %>
   ServerAdmin <%= node[:ceph][:admin_email] %>
