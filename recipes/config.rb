@@ -37,12 +37,8 @@ end
 # Get the list of monitors from Chef
 mon_addresses = []
 mon_pool = search(:node, "roles:ceph-mon AND chef_environment:#{node.chef_environment}")
-mon_pool.each do |matching|
-  if (node["network"][node["network"]["storage"]]["v6"].nil?)
-    mon_addresses << node["network"][node["network"]["storage"]]["v4"]["addr"]["primary"]
-  else
-    mon_addresses << "[" + matching["network"][node["network"]["storage"]]["v6"]["addr"]["primary"] + "]:6789"
-  end
+mon_pool.each do |monitor|
+  mon_addresses << get_if_ip_for_net("storage",monitor)
 end
 mon_addresses.sort!
 

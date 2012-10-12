@@ -89,11 +89,7 @@ apache_module "rewrite" do
 	conf false
 end
 
-if(defined? node["network"][node["network"]["loadbal"]]["v6"]["addr"]["primary"]) then
-	listen_addr = node["network"][node["network"]["loadbal"]]["v6"]["addr"]["primary"]
-else
-	listen_addr = node["ceph"]["radosgw"]["listen_addr"]
-end
+listen_addr = get_if_ip_for_net('loadbal',node)
 
 template "/etc/apache2/sites-available/rgw.conf" do
 	source "rgw.conf.erb"
