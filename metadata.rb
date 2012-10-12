@@ -1,9 +1,9 @@
-maintainer       "DreamHost Ops"
+maintainer       "DreamHost Web Hosting"
 maintainer_email "chef@dreamhost.com"
 license          "Apache 2.0"
 description      "Installs/Configures the Ceph distributed filesystem"
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
-version          "1.9.1"
+version          "2.0.0"
 recipe           "ceph::admin", ""
 recipe           "ceph::mds", ""
 recipe           "ceph::mon", ""
@@ -12,7 +12,7 @@ recipe           "ceph::oss", ""
 recipe           "ceph::radosgw", ""
 recipe           "ceph::rados-rest", ""
 
-%w{ apache2 apt btrfs parted xfs logrotate supervisord }.each do |cookbook|
+%w{ apache2 apt btrfs parted xfs logrotate }.each do |cookbook|
 	depends cookbook
 end
 

@@ -1,7 +1,7 @@
 Description
 ===========
 
-Installs and configures Ceph, a distributed network storage and filesystem 
+Installs and configures Ceph, a distributed object store and filesystem
 designed to provide excellent performance, reliability, and scalability.
 
 Requirements
@@ -9,8 +9,8 @@ Requirements
 
 ## Platform:
 
-Tested on Debian Squeeze, Ubuntu Oneiric. Should work on any Debian or Ubuntu family
-distribution.
+Tested on Debian Squeeze, Ubuntu Oneiric, Ubuntu Precise. Should work on any
+Debian or Ubuntu family distribution.
 
 ## Cookbooks:
 
@@ -25,7 +25,7 @@ https://github.com/opscode/cookbooks
 
 Also required are the following cookbooks from DreamHost.com:
 
-https://git.newdream.net/ops
+https://git.newdream.net/chef
 
 * btrfs
 * parted

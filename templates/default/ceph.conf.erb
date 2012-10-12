@@ -10,19 +10,15 @@
 	<%= key %> = <%= value %>
 <% end -%>
 
-<% @mon_pool.each do |mon| -%>
-[mon.<%= mon[:hostname] %>]
-	host = <%= mon[:hostname] %>
-	<% if (mon["network"][node["network"]["storage"]]["v6"]["addr"]["primary"].nil?) then -%>
-	mon addr = <%= mon["network"][node["network"]["storage"]]["v4"]["addr"]["primary"] %>:6789
-	<% else -%>
-	mon addr = [<%= mon["network"][node["network"]["storage"]]["v6"]["addr"]["primary"] %>]:6789
-	<% end -%>
+<% @monitors.each do |monitor, address| -%>
+[mon.<%= monitor %>]
+	host = <%= monitor %>
+	mon addr = <%= address %>
 
 <% end -%>
 
-[mds]
 <% if (! node["ceph"]["config"]["mds"].nil?) -%>
+[mds]
 	<% node["ceph"]["config"]["mds"].each do |key, value| -%>
 	<%= key %> = <%= value %>
 <%   end -%>
@@ -41,18 +37,8 @@
 <% @osd_devices.each do |osd_device| -%>
 [osd.<%= osd_device['osd_id'] %>]
 	host = <%= node[:hostname] %>
-	<% if (node["network"][node["network"]["storage"]]["v6"]["addr"]["primary"].nil?) then -%>
-	public addr = <%= node["network"][node["network"]["storage"]]["v4"]["addr"]["primary"] %>
-	<% else -%>
-	public addr = [<%= node["network"][node["network"]["storage"]]["v6"]["addr"]["primary"] %>]
-	<% end -%>
-	<% if (! node["network"]["storage-back"].nil?) then -%>
-	<%   if (node["network"][node["network"]["storage-back"]]["v6"]["addr"]["primary"].nil?) then -%>
-	cluster addr = <%= node["network"][node["network"]["storage-back"]]["v4"]["addr"]["primary"] %>
-	<%   else -%>
-	cluster addr = [<%= node["network"][node["network"]["storage-back"]]["v6"]["addr"]["primary"] %>]
-	<%   end -%>
-	<% end -%>
+	public addr = <%= @storage_ip %>
+	cluster addr = <%= @storage_back_ip %>
 
 <% end -%>
 
@@ -63,7 +49,7 @@
 	rgw swift url = https://<%= node["ceph"]["api_fqdn"] %>
 	rgw swift url prefix = swift
 	rgw dns name = <%= node["ceph"]["api_fqdn"] %>
-	<% node["ceph"]["config"]["rgw"].each do |key, value| -%>
+<% node["ceph"]["config"]["rgw"].each do |key, value| -%>
 	<%= key %> = <%= value %>
 <%   end -%>
 <% end -%>

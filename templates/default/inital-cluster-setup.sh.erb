@@ -57,11 +57,7 @@ echo ">>Add admin key to monitor keyring"
 cat /etc/ceph/client.admin.keyring >>/srv/ceph/temp.mon.setup/keyring
 
 echo ">>Generate an initial monmap with only this node"
-<% if (node["network"][node["network"]["storage"]]["v6"]["addr"]["primary"].nil?) -%>
-monmaptool --create --clobber --add <%= node['hostname'] %> <%= node["network"][node["network"]["storage"]]["v4"]["addr"]["primary"] %> /srv/ceph/temp.mon.setup/monmap
-<% else -%>
-monmaptool --create --clobber --add <%= node['hostname'] %> [<%= node["network"][node["network"]["storage"]]["v6"]["addr"]["primary"] %>] /srv/ceph/temp.mon.setup/monmap
-<% end -%>
+monmaptool --create --clobber --add <%= node['hostname'] %> <%= @monitor_ip %> /srv/ceph/temp.mon.setup/monmap
 
 echo ">>Generate a simple OSD map and CRUSH map for this cluster"
 osdmaptool --clobber --createsimple 1 /srv/ceph/temp.mon.setup/osdmap

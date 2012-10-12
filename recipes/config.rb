@@ -1,8 +1,8 @@
+# Cookbook Name:: ceph
+# Recipe:: config 
 #
 # Author:: Kyle Bader <kyle.bader@dreamhost.com>
 # Author:: Carl Perry <carl.perry@dreamhost.com>
-# Cookbook Name:: ceph
-# Recipe:: config 
 #
 # Copyright 2011, 2012 DreamHost Web Hosting
 #
@@ -34,13 +34,22 @@ if (! node['ceph']['osd_devices'].nil?) then
   end
 end
 
-# Get the list of monitors from Chef
-mon_addresses = []
+# Get monitor ips and hostnames
+monitors = {}
 mon_pool = search(:node, "roles:ceph-mon AND chef_environment:#{node.chef_environment}")
 mon_pool.each do |monitor|
-  mon_addresses << get_if_ip_for_net("storage",monitor)
+  monitors[monitor['hostname']] = get_if_ip_for_net("storage",monitor)
 end
-mon_addresses.sort!
+
+# Get storage ips if I'm an OSD
+storage_ip = ''
+storage_back_ip = ''
+node.run_list.each do |matching|
+  if (matching == 'role[ceph-osd]')
+    storage_ip = get_if_ip_for_net("storage",node)
+    storage_back_ip = get_if_ip_for_net("storage-back",node)
+  end
+end
 
 # Am I a RESTful RADOS Gateway?
 is_radosgw = 0
@@ -60,9 +69,10 @@ end
 template '/etc/ceph/ceph.conf' do
   source 'ceph.conf.erb'
   variables(
-            :mon_addresses => mon_addresses,
-            :mon_pool => mon_pool,
+            :monitors => monitors,
             :osd_devices => osd_devices,
+            :storage_ip => storage_ip,
+            :storage_back_ip => storage_back_ip,
             :is_radosgw => is_radosgw
   )
   mode '0644'
