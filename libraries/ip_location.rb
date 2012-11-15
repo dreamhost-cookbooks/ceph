@@ -52,7 +52,7 @@ def get_if_ip_for_net(network, nodeish = nil)
       if v["family"] == "inet6" or v["family"] == "inet" then
         addr=IPAddr.new(k)
         if net.include?(addr) then
-          return [interface[0], k]
+          return k
         end
       end
     end
