@@ -38,16 +38,16 @@ end
 monitors = {}
 mon_pool = search(:node, "roles:ceph-mon AND chef_environment:#{node.chef_environment}")
 mon_pool.each do |monitor|
-  monitors[monitor['hostname']] = get_if_ip_for_net("storage",monitor)
+  monitors[monitor['hostname']] = get_if_ip_for_net("public",monitor)
 end
 
-# Get storage ips if I'm an OSD
-storage_ip = ''
-storage_back_ip = ''
+# Get cluster ips if I'm an OSD
+public_ip = ''
+cluster_ip = ''
 node.run_list.each do |matching|
   if (matching == 'role[ceph-osd]')
-    storage_ip = get_if_ip_for_net("storage",node)
-    storage_back_ip = get_if_ip_for_net("storage-back",node)
+    public_ip = get_if_ip_for_net("public",node)
+    cluster_ip = get_if_ip_for_net("cluster",node)
   end
 end
 
@@ -71,8 +71,8 @@ template '/etc/ceph/ceph.conf' do
   variables(
             :monitors => monitors,
             :osd_devices => osd_devices,
-            :storage_ip => storage_ip,
-            :storage_back_ip => storage_back_ip,
+            :public_ip => public_ip,
+            :cluster_ip => cluster_ip,
             :is_radosgw => is_radosgw
   )
   mode '0644'

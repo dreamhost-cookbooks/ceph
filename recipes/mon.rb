@@ -30,12 +30,12 @@ end
 # Automated monitor creation
 if (node['ceph']['mon_bootstrap'].nil? || node['ceph']['fsid'].nil?)
 	Chef::Log.warn("No mon_bootstrap key and/or fsid found, run /etc/ceph/initial-cluster-setup.sh")
-	monitor_ip = get_if_ip_for_net('storage',node)
+	monitor_ip = get_if_ip_for_net('public',node)
 	template '/etc/ceph/initial-cluster-setup.sh' do
 		source 'inital-cluster-setup.sh.erb'
 		mode '0500'
 		variables(
-			:monitor_ip => monitor_ip,
+			:monitor_ip => monitor_ip
 		)
 	end
 	cookbook_file '/etc/ceph/chef-crushmap.txt' do
@@ -71,7 +71,7 @@ else
 		mon_pool = search(:node, "roles:ceph-mon AND chef_environment:#{node.chef_environment}")
 		mon_pool.each do |monitor|
 			if (node["fqdn"] != monitor["fqdn"])
-				mon_list << get_if_ip_for_net('storage',monitor)
+				mon_list << get_if_ip_for_net('public',monitor)
 			end
 		end
 

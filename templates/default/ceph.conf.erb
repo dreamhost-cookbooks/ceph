@@ -37,8 +37,8 @@
 <% @osd_devices.each do |osd_device| -%>
 [osd.<%= osd_device['osd_id'] %>]
 	host = <%= node[:hostname] %>
-	public addr = <%= @storage_ip %>
-	cluster addr = <%= @storage_back_ip %>
+	public addr = <%= @public_ip %>
+	cluster addr = <%= @cluster_ip %>
 
 <% end -%>
 
