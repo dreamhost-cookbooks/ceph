@@ -25,11 +25,11 @@ def randomFileNameSuffix (numberOfRandomchars)
 end
 
 logrotate_app "ceph-client" do
-	cookbook "logrotate"
-	path "/var/log/ceph/ceph.client.*.log"
-	frequency "size=200M"
-	rotate 9
-	create "644 root root"
+  cookbook "logrotate"
+  path "/var/log/ceph/ceph.client.*.log"
+  frequency "size=200M"
+  rotate 9
+  create "644 root root"
 end
 
 # Setup the radosgw keyring

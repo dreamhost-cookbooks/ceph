@@ -22,19 +22,19 @@ include_recipe "apt"
 include_recipe "ceph::default"
 
 radosgw_packages = %w{
-	librados2
-	radosgw
-	radosgw-dbg
+  librados2
+  radosgw
+  radosgw-dbg
 }
 
 radosgw_packages.each do |pkg|
-	apt_preference pkg do
-		pin "version #{node['ceph']['version']}"
-		pin_priority "1001"
-	end
-	package pkg do
-		version node['ceph']['radosgw']['version']
-		action :install
-		options "-o Dpkg::Options::='--force-confold'"
-	end
+  apt_preference pkg do
+    pin "version #{node['ceph']['version']}"
+    pin_priority "1001"
+  end
+  package pkg do
+    version node['ceph']['radosgw']['version']
+    action :install
+    options "-o Dpkg::Options::='--force-confold'"
+  end
 end

@@ -22,11 +22,11 @@ include_recipe "apt"
 include_recipe "ceph::rados-rest"
 
 package "python-simplejson" do
-	action :upgrade
+  action :upgrade
 end
 
 package "python-tz" do
-	action :upgrade
+  action :upgrade
 end
 
 if (node['ceph']['admin_key'].nil?) then

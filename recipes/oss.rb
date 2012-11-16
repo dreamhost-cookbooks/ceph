@@ -21,23 +21,23 @@
 include_recipe "apt"
 
 apt_preference "obsync" do
-	pin "version #{node['ceph']['version']}"
-	pin_priority "1001"
+  pin "version #{node['ceph']['version']}"
+  pin_priority "1001"
 end
 
 package "obsync" do
-	version = node['ceph']['version']
-	action :install
+  version = node['ceph']['version']
+  action :install
 end
 
 packages = %w{
-	python-celery
-	python-cloudfiles
-	python-redis
+  python-celery
+  python-cloudfiles
+  python-redis
 }
 
 packages.each do |pkg|
-	package pkg do
-		action :upgrade
-	end
+  package pkg do
+    action :upgrade
+  end
 end
