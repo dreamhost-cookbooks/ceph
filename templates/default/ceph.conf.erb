@@ -13,7 +13,7 @@
 <% @monitors.each do |monitor, address| -%>
 [mon.<%= monitor %>]
   host = <%= monitor %>
-  mon addr = [<%= address %>]
+  mon addr = [<%= address %>]:6789
 
 <% end -%>
 
