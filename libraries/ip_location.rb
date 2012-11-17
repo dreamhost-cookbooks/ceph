@@ -40,14 +40,14 @@ def get_if_ip_for_net(network, nodeish = nil)
     return "127.0.0.1"
   end
 
-  if not (node.has_key?("ceph_networks") and node["ceph_networks"].has_key?(network)) then
+  if not (nodeish.has_key?("ceph_networks") and nodeish["ceph_networks"].has_key?(network)) then
     error = "Can't find network #{network}"
     Chef::Log.error(error)
     raise error
   end
 
-  net = IPAddr.new(node["ceph_networks"][network])
-  node["network"]["interfaces"].each do |interface|
+  net = IPAddr.new(nodeish["ceph_networks"][network])
+  nodeish["network"]["interfaces"].each do |interface|
     interface[1]["addresses"].each do |k,v|
       if v["family"] == "inet6" or v["family"] == "inet" then
         addr=IPAddr.new(k)
