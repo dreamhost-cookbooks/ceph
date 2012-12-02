@@ -89,7 +89,7 @@ apache_module "rewrite" do
   conf false
 end
 
-listen_addr = get_if_ip_for_net('loadbal',node)
+listen_addr = get_cephnet_ip('loadbal',node)
 
 template "/etc/apache2/sites-available/rgw.conf" do
   source "rgw.conf.erb"

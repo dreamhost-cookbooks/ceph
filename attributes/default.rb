@@ -23,3 +23,4 @@ default["ceph"]["debug_mon"] = 20
 default["ceph"]["debug_ms"] = 1
 default["ceph"]["debug_osd"] = 1
 default["ceph"]["debug_filestore"] = 20
+default["ceph"]["dmcrypt_osd"] = false

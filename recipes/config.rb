@@ -18,12 +18,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-execute "start ceph services" do
-  command "service ceph start"
-  returns [0,1]
-  action :nothing
-end
-
 # Grab any OSD devices on this node
 osd_devices = []
 if (! node['ceph']['osd_devices'].nil?) then
@@ -38,7 +32,7 @@ end
 monitors = {}
 mon_pool = search(:node, "roles:ceph-mon AND chef_environment:#{node.chef_environment}")
 mon_pool.each do |monitor|
-  monitors[monitor['hostname']] = get_if_ip_for_net("public",monitor)
+  monitors[monitor['hostname']] = get_cephnet_ip("public",monitor)
 end
 
 # Get cluster ips if I'm an OSD
@@ -46,8 +40,8 @@ public_ip = ''
 cluster_ip = ''
 node.run_list.each do |matching|
   if (matching == 'role[ceph-osd]')
-    public_ip = get_if_ip_for_net("public",node)
-    cluster_ip = get_if_ip_for_net("cluster",node)
+    public_ip = get_cephnet_ip("public",node)
+    cluster_ip = get_cephnet_ip("cluster",node)
   end
 end
 
@@ -76,6 +70,5 @@ template '/etc/ceph/ceph.conf' do
             :is_radosgw => is_radosgw
   )
   mode '0644'
-  notifies :run, resources(:execute => "start ceph services")
 end
 

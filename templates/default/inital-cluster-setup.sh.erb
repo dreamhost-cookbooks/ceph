@@ -3,6 +3,9 @@
 
 set -e
 
+# It's sometimes running
+sv stop mon.<%= node['hostname'] %>
+
 cat <<EOF
 Ceph inital cluster setup script
 
@@ -22,8 +25,24 @@ Ceph MON nodes (if any) before running the
 chef-client on any other Cpeh nodes.
 
 Let' get started.
+
+I need to know what style crushmap to install:
+1) Replicas are guaranteed to be on unique hosts
+2) Replicas are guaranteed to be on unique racks
+
 EOF
 
+CRUSHMAP="0"
+while [ $CRUSHMAP = "0" ]; do
+  echo -n "Choose, but choose wisely: "
+  read SELECTION
+  if [ $SELECTION = "1" ]
+    then CRUSHMAP="chef-host-crushmap.txt"
+  elif [ $SELECTION = "2" ]
+    then CRUSHMAP="chef-rack-crushmap.txt"
+  fi
+done
+  
 echo ">>Get the Ceph package version"
 version=$(dpkg-query -f '${Version}\n' --show ceph)
 
@@ -66,16 +85,16 @@ echo ">>Smush the whole mess together into a complete MON dataset"
 ceph-mon --mkfs -i <%= node["hostname"] %> --monmap=/srv/ceph/temp.mon.setup/monmap --osdmap=/srv/ceph/temp.mon.setup/osdmap --keyring=/srv/ceph/temp.mon.setup/keyring
 
 echo ">>Start the MON"
-service ceph start mon.<%= node['hostname'] %>
+sv start mon.<%= node['hostname'] %>
 
 echo ">>Get the FSID"
 fsid=$(ceph fsid --concise)
 
 echo ">>Add caps to the OSD Bootstrap key"
-ceph auth add -i /etc/ceph/client.bootstrap-osd.keyring client.bootstrap-osd mon 'allow command osd create; allow command osd crush add ...; allow command auth add * osd allow\ * mon allow\ rwx; allow command mon getmap'
+ceph auth add -i /etc/ceph/client.bootstrap-osd.keyring client.bootstrap-osd mon 'allow command osd create; allow command osd crush set ...; allow command auth add * osd allow\ * mon allow\ rwx; allow command mon getmap'
 
 echo ">>Compile the Chef ready crushmap"
-crushtool -c /etc/ceph/chef-crushmap.txt -o /srv/ceph/temp.mon.setup/crushmap
+crushtool -c /etc/ceph/$CRUSHMAP -o /srv/ceph/temp.mon.setup/crushmap
 
 echo ">>Use the Chef ready crushmap"
 ceph osd setcrushmap -i /srv/ceph/temp.mon.setup/crushmap

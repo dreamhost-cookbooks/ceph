@@ -19,6 +19,7 @@
 # limitations under the License.
 
 include_recipe "apt"
+include_recipe "runit"
 include_recipe "ceph::rados-rest"
 
 def randomFileNameSuffix (numberOfRandomchars)
@@ -30,7 +31,7 @@ end
 # Automated monitor creation
 if (node['ceph']['mon_bootstrap'].nil? || node['ceph']['fsid'].nil?)
   Chef::Log.warn("No mon_bootstrap key and/or fsid found, run /etc/ceph/initial-cluster-setup.sh")
-  monitor_ip = get_if_ip_for_net('public',node)
+  monitor_ip = get_cephnet_ip('public',node)
   template '/etc/ceph/initial-cluster-setup.sh' do
     source 'inital-cluster-setup.sh.erb'
     mode '0500'
@@ -38,17 +39,34 @@ if (node['ceph']['mon_bootstrap'].nil? || node['ceph']['fsid'].nil?)
       :monitor_ip => monitor_ip
     )
   end
-  cookbook_file '/etc/ceph/chef-crushmap.txt' do
+  cookbook_file '/etc/ceph/chef-host-crushmap.txt' do
     source 'crushmap.txt'
     mode '0400'
   end
+  cookbook_file '/etc/ceph/chef-rack-crushmap.txt' do
+    source 'crushmap-rack.txt'
+    mode '0400'
+  end
+  runit_service "mon.#{node['hostname']}" do
+    template_name "mon"
+    log_template_name "mon"
+    start_command "stop"
+    restart_command "stop"
+    options ({
+               'mon_id' => node['hostname']
+             })
+  end
+
 else
   Chef::Log.info("The mon_bootstrap key and fsid are avaiable, MONs can be created")
   # We have a cluster, help the user not shoot themself in the foot
   file "/etc/ceph/initial-cluster-setup.sh" do
     action :delete
   end
-  file "/etc/ceph/chef-crushmap.txt" do
+  file "/etc/ceph/chef-host-crushmap.txt" do
+    action :delete
+  end
+  file "/etc/ceph/chef-rack-crushmap.txt" do
     action :delete
   end
   # Does this monitor already exist?
@@ -71,7 +89,7 @@ else
     mon_pool = search(:node, "roles:ceph-mon AND chef_environment:#{node.chef_environment}")
     mon_pool.each do |monitor|
       if (node["fqdn"] != monitor["fqdn"])
-        mon_list << get_if_ip_for_net('public',monitor)
+        mon_list << get_cephnet_ip('public',monitor)
       end
     end
 
@@ -85,6 +103,18 @@ else
 
     file monmap_path do
       action :delete
+    end
+
+    # Use runit instead
+    service "ceph" do
+      action :disable
+    end
+    runit_service "mon.#{node['hostname']}" do
+      template_name "mon"
+      log_template_name "mon"
+      options({
+                'mon_id' => node['hostname']
+              })
     end
 
     execute "Enable Monitor" do

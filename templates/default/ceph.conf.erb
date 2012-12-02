@@ -12,8 +12,8 @@
 
 <% @monitors.each do |monitor, address| -%>
 [mon.<%= monitor %>]
-  host = <%= monitor %>
-  mon addr = [<%= address %>]:6789
+	host = <%= monitor %>
+	mon addr = <%= address %>:6789
 
 <% end -%>
 
@@ -36,9 +36,11 @@
 
 <% @osd_devices.each do |osd_device| -%>
 [osd.<%= osd_device['osd_id'] %>]
-  host = <%= node[:hostname] %>
-  public addr = <%= @public_ip %>
-  cluster addr = <%= @cluster_ip %>
+	host = <%= node[:hostname] %>
+	public addr = <%= @public_ip %>
+<%   if not @cluser_ip == "0.0.0.0" then -%>
+	cluster addr = <%= @cluster_ip %>
+<%   end # cluster IP check -%>
 
 <% end -%>
 
