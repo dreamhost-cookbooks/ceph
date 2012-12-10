@@ -19,25 +19,28 @@
 # limitations under the License.
 
 apt_repository "ceph" do
-  uri node['ceph']['repo_uri']
+  uri node['ceph']['apt']['ceph_repo']
   distribution node['lsb']['codename']
   components ["main"]
-  key "https://raw.github.com/ceph/ceph/master/keys/autobuild.asc"
+  keyserver node['ceph']['apt']['key_server']
+  key node['ceph']['apt']['key']
   action :add
 end
 
 apt_repository "ceph-apache2" do
-  uri node['ceph']['apache2']['repo_uri']
+  uri node['ceph']['apt']['apache2_repo']
   distribution node['lsb']['codename']
   components ["main"]
-  key "https://raw.github.com/ceph/ceph/master/keys/autobuild.asc"
+  keyserver node['ceph']['apt']['key_server']
+  key node['ceph']['apt']['key']
   action :add
 end
 
 apt_repository "ceph-fastcgi" do
-  uri node['ceph']['fastcgi']['repo_uri']
+  uri node['ceph']['apt']['fastcgi_repo']
   distribution node['lsb']['codename']
   components ["main"]
-  key "https://raw.github.com/ceph/ceph/master/keys/autobuild.asc"
+  keyserver node['ceph']['apt']['key_server']
+  key node['ceph']['apt']['key']
   action :add
 end

@@ -27,21 +27,29 @@ ceph_packages = %w{
   ceph-common-dbg
   ceph
   ceph-dbg
+  python-ceph
 }
 
 # We can't pin and install in the same loop because of depends
-
+ceph = node['ceph']
 ceph_packages.each do |pkg|
-  apt_preference pkg do
-    pin "version #{node['ceph']['version']}"
-    pin_priority "1001"
-  end
-  package pkg do
-    version node['ceph']['version']
-    action :install
-    options "--no-install-recommends -o Dpkg::Options::='--force-confold'"
-  end
-end
+  if (ceph.has_key?('version')) then
+    apt_preference pkg do
+      pin "version #{node['ceph']['version']}"
+      pin_priority "1001"
+    end
+    package pkg do
+      version node['ceph']['version']
+      action :install
+      options "--no-install-recommends -o Dpkg::Options::='--force-confold'"
+    end 
+  else
+    package pkg do
+      action :install
+      options "--no-install-recommends -o Dpkg::Options::='--force-confold'"
+    end 
+  end # if ceph.has_key
+end # ceph_packages.each
 
 directories = %w{
   /etc/cron.hourly
