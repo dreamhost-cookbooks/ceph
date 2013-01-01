@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 exec 2>&1
 SVCDIR=`pwd`
 
@@ -36,11 +36,11 @@ if [ ! -L /srv/ceph/devices/osd.<%= @options['osd_id'] %>.data.encrypted ]; then
 fi
 
 if [ ! -e /dev/mapper/cryptosd.<%= @options['osd_id'] %>.journal ]; then
-  cryptsetup luksOpen -d /srv/ceph/dmkey/osd.<%= @options['osd_id'] %>.journal /srv/ceph/devices/osd.<%= @options['osd_id'] %>.journal cryptosd.<%= @options['osd_id'] %>.journal || critical_failure "Unable to decrypt journal device!"
+  cryptsetup luksOpen -d /srv/ceph/dmkey/osd.<%= @options['osd_id'] %>.journal /srv/ceph/devices/osd.<%= @options['osd_id'] %>.journal.encrypted cryptosd.<%= @options['osd_id'] %>.journal || critical_failure "Unable to decrypt journal device!"
 fi
 
 if [ ! -e /dev/mapper/cryptosd.<%= @options['osd_id'] %>.data ]; then
-  cryptsetup luksOpen -d /srv/ceph/dmkey/osd.<%= @options['osd_id'] %>.data /srv/ceph/devices/osd.<%= @options['osd_id'] %>.data cryptosd.<%= @options['osd_id'] %>.data || critical_failure "Unable to decrypt data device!"
+  cryptsetup luksOpen -d /srv/ceph/dmkey/osd.<%= @options['osd_id'] %>.data /srv/ceph/devices/osd.<%= @options['osd_id'] %>.data.encrypted cryptosd.<%= @options['osd_id'] %>.data || critical_failure "Unable to decrypt data device!"
 fi
 
 if [ ! -L /srv/ceph/devices/osd.<%= @options['osd_id'] %>.journal ]; then

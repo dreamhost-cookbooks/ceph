@@ -184,6 +184,10 @@ def create_osd (osd_device, bootstrap_key, bootstrap_path, monmap_path)
       template_name "osd-dmcrypt"
       log_template_name "osd"
       options({
+                'osd_data_device' => osd_data_device,
+                'osd_journal_device' => osd_journal_device,
+                'cryptosd_data_device' => cryptosd_data_device,
+                'cryptosd_journal_device' => cryptosd_journal_device,
                 'osd_id' => osd_id
               })
     end
@@ -192,6 +196,8 @@ def create_osd (osd_device, bootstrap_key, bootstrap_path, monmap_path)
       template_name "osd-plaintext"
       log_template_name "osd"
       options({
+                'osd_data_device' => osd_data_device,
+                'osd_journal_device' => osd_journal_device,
                 'osd_id' => osd_id
               })
     end
@@ -302,19 +308,27 @@ def destroy_osd (osd_device, adminkey_path)
       action :delete
     end
     # Remove links to the encrypted devices
-    file "/srv/ceph/devices/osd.#{osd_id}.journal.encrypted" do
+    link "/srv/ceph/devices/osd.#{osd_device['osd_id']}.data.encrypted" do
+      to "#{cryptosd_data_device}"
+      link_type :symbolic
       action :delete
     end
-    file "/srv/ceph/devices/osd.#{osd_id}.data.encrypted" do
+    link "/srv/ceph/devices/osd.#{osd_device['osd_id']}.journal.encrypted" do
+      to "#{cryptosd_journal_device}"
+      link_type :symbolic
       action :delete
     end
   end
 
   # Remove symlinks for ceph config (temporary until we get upstart)
-  file "/srv/ceph/devices/osd.#{osd_device['osd_id']}.data" do
+  link "/srv/ceph/devices/osd.#{osd_device['osd_id']}.data" do
+    to "#{osd_data_device}"
+    link_type :symbolic
     action :delete
   end
-  file "/srv/ceph/devices/osd.#{osd_device['osd_id']}.journal" do
+  link "/srv/ceph/devices/osd.#{osd_device['osd_id']}.journal" do
+    to "#{osd_journal_device}"
+    link_type :symbolic
     action :delete
   end
 
@@ -416,6 +430,13 @@ else
     end #status==create
     # Prevent bum chef runs from messing up the works.
     node.save
+  end
+
+  cookbook_file "/srv/ceph/all-osd" do
+    source "all-osd"
+    mode 0550
+    owner "root"
+    group "root"
   end
 
   # Cleanup tempfiles

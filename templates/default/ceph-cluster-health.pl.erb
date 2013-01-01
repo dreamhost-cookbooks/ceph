@@ -22,7 +22,7 @@ foreach my $line (@health) {
 }
 
 sub usage {
-	die "$0: <alert email> <cluster>\n";
+	die "$0: <warning email> <critical email> <cluster>\n";
 }
 
 sub send_alert {
@@ -31,12 +31,12 @@ sub send_alert {
         my $alert_email = shift;
         my $alert = shift;
 
-        my $smtp = Net::SMTP->new('localhost');
-        $smtp->mail('do-not-reply@dreamhost.com');
+        my $smtp = Net::SMTP->new("<%= @mailhost %>");
+        $smtp->mail("Ceph Cluster Health Script <ceph\@<%= @fqdn %>>");
         $smtp->to($alert_email);
-        $smtp->to('kyle.bader@dreamhost.com');
+        $smtp->to('<%= @critical_email %>');
         $smtp->data();
-        $smtp->datasend("From: Dream Objects Ceph Health Bot <do-not-reply\@dreamhost.com>\n");
+        $smtp->datasend("From: Ceph Cluster Health Script <ceph\@<%= @fqdn %>>\n");
         $smtp->datasend("To: $alert_email\n");
         $smtp->datasend("Subject: $cluster Ceph Health Alert\n");
         $smtp->datasend("\n");

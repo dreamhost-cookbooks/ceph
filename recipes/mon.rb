@@ -60,6 +60,9 @@ if (node['ceph']['mon_bootstrap'].nil? || node['ceph']['fsid'].nil?)
 else
   Chef::Log.info("The mon_bootstrap key and fsid are avaiable, MONs can be created")
   # We have a cluster, help the user not shoot themself in the foot
+  directory "/srv/ceph" do
+    action :create
+  end
   file "/etc/ceph/initial-cluster-setup.sh" do
     action :delete
   end
@@ -94,7 +97,8 @@ else
     end
 
     execute "Bootstrap Monitor" do
-      command "ceph-mon -i #{node['hostname']} --mkfs --fsid #{node['ceph']['fsid']} --keyring #{bootstrap_path} -m #{mon_list.join(",")}"
+#      command "ceph-mon -i #{node['hostname']} --mkfs --fsid #{node['ceph']['fsid']} --keyring #{bootstrap_path} -m #{mon_list.join(",")}"
+      command "ceph-mon -i #{node['hostname']} --mkfs --fsid #{node['ceph']['fsid']} --keyring #{bootstrap_path}"
     end
 
     file bootstrap_path do
@@ -116,20 +120,21 @@ else
                 'mon_id' => node['hostname']
               })
     end
-
-    execute "Enable Monitor" do
-      command "service ceph start mon.#{node['hostname']}"
-    end
   else
     Chef::Log.info("No ceph MON needed to be created")
   end
 end
 
-cookbook_file "/usr/bin/ceph-cluster-health.pl" do
-  source "ceph-cluster-health.pl"
+template "/usr/bin/ceph-cluster-health.pl" do
+  source "ceph-cluster-health.pl.erb"
   owner "root"
   group "root"
   mode "0755"
+  variables(
+            :mailhost => node['ceph']['mail_host'],
+            :critical_email => node['ceph']['critical_email'],
+            :fqdn => node['fqdn']
+            )
 end
 
 cron "ceph-cluster-health" do

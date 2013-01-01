@@ -3,11 +3,7 @@ maintainer_email "chef@dreamhost.com"
 license          "Apache 2.0"
 description      "Installs/Configures the Ceph distributed filesystem"
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
-<<<<<<< HEAD
-version          "2.0.5"
-=======
 version          "2.1.5"
->>>>>>> Add runit, add FDE, cleanups
 recipe           "ceph::admin", ""
 recipe           "ceph::mds", ""
 recipe           "ceph::mon", ""
