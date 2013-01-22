@@ -74,9 +74,13 @@ file "/var/lib/ceph/radosgw/ceph-radosgw.#{node['hostname']}/done" do
 end
 
 service "radosgw" do
-#  provider Chef::Provider::Service::Upstart
-  #service_name "radosgw-all"
   service_name "radosgw"
+  action [:disable]
+end
+
+service "radosgw-all" do
+  provider Chef::Provider::Service::Upstart
+  service_name "radosgw-all"
   supports :restart => true
   action [:enable, :start]
 end
@@ -99,9 +103,6 @@ template "/etc/apache2/sites-available/rgw.conf" do
   variables(
     :listen_addr => listen_addr
   )
-  if ::File.exists?("#{node['apache']['dir']}/sites-enabled/rgw.conf")
-    notifies :restart, "service[apache2]"
-  end
 end
 
 cookbook_file "/etc/logrotate.d/apache2" do
