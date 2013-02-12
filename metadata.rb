@@ -1,5 +1,5 @@
 maintainer       "DreamHost Web Hosting"
-maintainer_email "chef@dreamhost.com"
+maintainer_email "jordan@dreamhost.com"
 license          "Apache 2.0"
 description      "Installs/Configures the Ceph distributed filesystem"
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
