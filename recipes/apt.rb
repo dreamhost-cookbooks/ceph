@@ -1,10 +1,11 @@
 #
 # Author:: Kyle Bader <kyle.bader@dreamhost.com>
 # Author:: Carl Perry <carl.perry@dreamhost.com>
+#
 # Cookbook Name:: ceph
 # Recipe:: apt
 #
-# Copyright 2011, 2012 DreamHost Web Hosting
+# Copyright 2011-2013 New Dream Network, LLC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,28 +20,28 @@
 # limitations under the License.
 
 apt_repository "ceph" do
-  uri node['ceph']['apt']['ceph_repo']
-  distribution node['lsb']['codename']
+  uri node["ceph"]["apt"]["ceph_repo"]
+  distribution node["lsb"]["codename"]
   components ["main"]
-  keyserver node['ceph']['apt']['key_server']
-  key node['ceph']['apt']['ceph_key']
+  keyserver node["ceph"]["apt"]["key_server"]
+  key node["ceph"]["apt"]["ceph_key"]
   action :add
 end
 
 apt_repository "ceph-apache2" do
-  uri node['ceph']['apt']['apache2_repo']
-  distribution node['lsb']['codename']
+  uri node["ceph"]["apt"]["apache2_repo"]
+  distribution node["lsb"]["codename"]
   components ["main"]
-  keyserver node['ceph']['apt']['key_server']
-  key node['ceph']['apt']['apache2_key']
+  keyserver node["ceph"]["apt"]["key_server"]
+  key node["ceph"]["apt"]["apache2_key"]
   action :add
 end
 
 apt_repository "ceph-fastcgi" do
-  uri node['ceph']['apt']['fastcgi_repo']
-  distribution node['lsb']['codename']
+  uri node["ceph"]["apt"]["fastcgi_repo"]
+  distribution node["lsb"]["codename"]
   components ["main"]
-  keyserver node['ceph']['apt']['key_server']
-  key node['ceph']['apt']['fastcgi_key']
+  keyserver node["ceph"]["apt"]["key_server"]
+  key node["ceph"]["apt"]["fastcgi_key"]
   action :add
 end

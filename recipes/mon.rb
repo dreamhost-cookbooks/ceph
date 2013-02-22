@@ -125,6 +125,39 @@ else
   end
 end
 
+directory "var/lib/ceph/mon/ceph-#{node.hostname}" do
+  owner "root"
+  group "root"
+  mode "755"
+  recursive true
+  action :create
+end
+
+file "var/lib/ceph/mon/ceph-#{node.hostname}/done" do
+  owner "root"
+  group "root"
+  mode "644"
+  action :touch
+end
+
+file "var/lib/ceph/mon/ceph-#{node.hostname}/upstart" do
+  owner "root"
+  group "root"
+  mode "644"
+  action :touch
+end
+
+service "ceph" do
+  service_name "ceph"
+  action :disable
+end
+
+service "ceph-mon-all" do
+  provider Chef::Provider::Service::Upstart
+  supports :restart => true
+  action [:enable, :start]
+end
+
 template "/usr/bin/ceph-cluster-health.pl" do
   source "ceph-cluster-health.pl.erb"
   owner "root"
@@ -139,6 +172,6 @@ end
 
 cron "ceph-cluster-health" do
   minute "*/5"
-  command "/usr/bin/ceph-cluster-health.pl '#{node['ceph']['warning_email']}' '#{node['ceph']['critical_email']}' '#{node['ceph']['cluster_name']}' > /dev/null"
+  command "setlock -n /tmp/check-cluster-health /usr/bin/ceph-cluster-health.pl '#{node['ceph']['warning_email']}' '#{node['ceph']['critical_email']}' '#{node['ceph']['cluster_name']}' > /dev/null"
   only_if do File.exist?("/usr/bin/ceph-cluster-health.pl") end
 end

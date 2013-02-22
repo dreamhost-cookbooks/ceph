@@ -1,6 +1,7 @@
 #
 # Author:: Kyle Bader <kyle.bader@dreamhost.com>
 # Author:: Carl Perry <carl.perry@dreamhost.com>
+#
 # Cookbook Name:: ceph
 # Recipe:: rados-client
 #
@@ -33,7 +34,7 @@ radosgw_packages.each do |pkg|
     pin_priority "1001"
   end
   package pkg do
-    version node['ceph']['version']
+    version node["ceph"]["version"]
     action :install
     options "-o Dpkg::Options::='--force-confold'"
   end

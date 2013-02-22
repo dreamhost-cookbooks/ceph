@@ -1,10 +1,11 @@
 #
 # Author:: Kyle Bader <kyle.bader@dreamhost.com>
 # Author:: Carl Perry <carl.perry@dreamhost.com>
+#
 # Cookbook Name:: ceph
 # Recipe:: admin
 #
-# Copyright 2011, 2012 DreamHost Web Hosting
+# Copyright 2011-2013 New Dream Network, LLC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +18,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-		        
+
 include_recipe "apt"
 include_recipe "ceph::rados-rest"
 
@@ -29,7 +30,7 @@ package "python-tz" do
   action :upgrade
 end
 
-if (node['ceph']['admin_key'].nil?) then
+if (node["ceph"]["admin_key"].nil?) then
   Chef::Log.info("No admin key available for creating keyring")
 else
   execute "create admin keyring" do

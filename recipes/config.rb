@@ -4,7 +4,7 @@
 # Author:: Kyle Bader <kyle.bader@dreamhost.com>
 # Author:: Carl Perry <carl.perry@dreamhost.com>
 #
-# Copyright 2011, 2012 DreamHost Web Hosting
+# Copyright 2011-2013 New Dream Network, LLC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@
 
 # Grab any OSD devices on this node
 osd_devices = []
-if (! node['ceph']['osd_devices'].nil?) then
-  node['ceph']['osd_devices'].each do |osd_device|
+if (! node["ceph"]["osd_devices"].nil?) then
+  node["ceph"]["osd_devices"].each do |osd_device|
     if (! osd_device['osd_id'].nil?)
       osd_devices << osd_device
     end
@@ -30,16 +30,16 @@ end
 
 # Get monitor ips and hostnames
 monitors = {}
-mon_pool = search(:node, "roles:ceph-mon AND chef_environment:#{node.chef_environment}")
+mon_pool = search(:node, "run_list:recipe\[ceph\:\:mon\] AND chef_environment:#{node.chef_environment}")
 mon_pool.each do |monitor|
   monitors[monitor['hostname']] = get_cephnet_ip("public",monitor)
 end
 
 # Get cluster ips if I'm an OSD
-public_ip = ''
-cluster_ip = ''
+public_ip = ""
+cluster_ip = ""
 node.run_list.each do |matching|
-  if (matching == 'role[ceph-osd]')
+  if (matching == "recipe[ceph::osd]")
     public_ip = get_cephnet_ip("public",node)
     cluster_ip = get_cephnet_ip("cluster",node)
   end
@@ -48,7 +48,7 @@ end
 # Am I a RESTful RADOS Gateway?
 is_radosgw = 0
 node.run_list.each do |matching|
-  if (matching == "role[ceph-rgw]")
+  if (matching == "recipe[ceph::radosgw]")
     is_radosgw = 1
   end
 end
@@ -60,8 +60,11 @@ directory "/etc/ceph" do
   action :create
 end
 
-template '/etc/ceph/ceph.conf' do
-  source 'ceph.conf.erb'
+template "/etc/ceph/ceph.conf" do
+  source "ceph.conf.erb"
+  owner "root"
+  group "root"
+  mode "0644"
   variables(
             :monitors => monitors,
             :osd_devices => osd_devices,
@@ -69,6 +72,5 @@ template '/etc/ceph/ceph.conf' do
             :cluster_ip => cluster_ip,
             :is_radosgw => is_radosgw
   )
-  mode '0644'
 end
 

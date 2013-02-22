@@ -1,10 +1,11 @@
 #
 # Author:: Kyle Bader <kyle.bader@dreamhost.com>
 # Author:: Carl Perry <carl.perry@dreamhost.com>
+#
 # Cookbook Name:: ceph
 # Recipe:: client
 #
-# Copyright 2011, 2012 DreamHost Web Hosting
+# Copyright 2011-2013 New Dream Network, LLC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,22 +34,22 @@ logrotate_app "ceph-client" do
 end
 
 # Setup the radosgw keyring
-if(!File.executable?('/usr/bin/ceph'))
+if(!File.executable?("/usr/bin/ceph"))
   Chef::Log.info("Ceph is not yet installed, will try keyring management again after that's done")
-elsif (node['ceph']['admin_key'].nil?)
+elsif (node["ceph"]["admin_key"].nil?)
   Chef::Log.warn("No admin_key key found, Client Keys cannot be managed")
 elsif (!File.exists?("/etc/ceph/ceph.conf"))
   Chef::Log.info("Ceph is not yet configured, will try keyring management again later")
 elsif (!File.exists?("/etc/ceph/client.radosgw.#{node['hostname']}.keyring"))
   Chef::Log.info("Creating client key for radosgw.#{node['hostname']}")
   bootstrap_path = "/tmp/bootstrap-" + randomFileNameSuffix(7)
-  %x{if [ ! -f #{bootstrap_path} ]; then touch #{bootstrap_path}; ceph-authtool #{bootstrap_path} --name=client.admin --add-key='#{node['ceph']['admin_key']}'; fi}
+  %x{if [ ! -f #{bootstrap_path} ]; then touch #{bootstrap_path}; ceph-authtool #{bootstrap_path} --name=client.admin --add-key='#{node["ceph"]["admin_key"]}'; fi}
 
   # client.radosgw.<%= node[:hostname] %>
   # this keyring will be used by clients on this host
   # instances
   hostname = node["hostname"]
-  execute 'create client.#{hostname} keyring' do
+  execute "create client.#{hostname} keyring" do
     creates '/etc/ceph/client.#{hostname}.keyring'
     command <<-EOH
 set -e

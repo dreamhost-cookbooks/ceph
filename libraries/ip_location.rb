@@ -5,7 +5,7 @@
 # https://github.com/rcbops-cookbooks/osops-utils
 #
 # Copyright 2012, Rackspace Hosting, Inc.
-# Copyright 2012, DreamHost Web Hosting
+# Copyright 2012-2013, New Dream Network, LLC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ def get_cephnet_ip(network, nodeish = nil)
     Chef::Log.warn(error)
     return "0.0.0.0"
   end
-  networks = node['ceph']['networks']
+  networks = node["ceph"]["networks"]
 
   # See if the requested network exists
   if not (networks.has_key?(network)) then

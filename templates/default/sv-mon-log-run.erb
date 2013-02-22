@@ -1,4 +1,0 @@
-#!/bin/sh
-if [ ! -d /var/log/ceph/runit ]; then mkdir /var/log/ceph/runit; fi
-if [ ! -d /var/log/ceph/runit/mon.<%= @options['mon_id'] %> ]; then mkdir /var/log/ceph/runit/mon.<%= @options['mon_id'] %>; fi
-exec svlogd -tt /var/log/ceph/runit/mon.<%= @options['mon_id'] %>

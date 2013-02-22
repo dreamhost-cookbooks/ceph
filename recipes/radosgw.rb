@@ -1,10 +1,11 @@
 #
 # Author:: Kyle Bader <kyle.bader@dreamhost.com>
 # Author:: Carl Perry <carl.perry@dreamhost.com>
+#
 # Cookbook Name:: ceph
 # Recipe:: radosgw
 #
-# Copyright 2011, 2012 DreamHost Web Hosting
+# Copyright 2011-2013 New Dream Network, LLC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -58,6 +59,7 @@ package 'libapache2-mod-fastcgi' do
   action :install
 end
 
+# Magic dir/file to enable upstart supervision
 directory "/var/lib/ceph/radosgw/ceph-radosgw.#{node['hostname']}" do
   owner "root"
   group "root"
@@ -73,6 +75,7 @@ file "/var/lib/ceph/radosgw/ceph-radosgw.#{node['hostname']}/done" do
   action :touch
 end
 
+# Disable Sys-V startup scripts
 service "radosgw" do
   service_name "radosgw"
   action [:disable]
