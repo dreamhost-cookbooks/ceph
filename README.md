@@ -19,6 +19,7 @@ https://github.com/opscode-cookbooks
 
 * apache2
 * apt
+* ntp
 * logrotate
 
 The `apt_repository` LWRP is used to create an entries for the ceph public 
@@ -38,6 +39,23 @@ place with Apt preferences, you can read about how they work here:
 
 http://wiki.debian.org/AptPreferences
 
+* node[:ceph][:fsid]
+
+This is the unique Ceph filesystem ID for the cluster. This ensures that
+multiple clusters on the same network(s) do not interact.  If this does
+not exist then automated MON mangement will not function. You can generate
+a fsid with uuidgen from the Ubuntu package "uuid-runtime":
+
+$ uuidgen
+cbc61c76-2d49-4589-b4f3-a0cef9dd19d7
+
+* node[:ceph][:rack]
+* node[:ceph][:row]
+
+These attributes specify which rack and row the nodes in the cluster are located
+in. This is used to configure CRUSH, the placement algorithm used by Ceph to
+achieve statisically even distribution of data.
+
 ## Ceph OSD Nodes
 
 * node[:ceph][:devices]
@@ -56,29 +74,7 @@ taken. Each device can optionally be set to any of three states that will cause
 actions to be triggered the next time their host node converges:
 
 * 'create' - Bootstrap and activate this device as a Ceph OSD
-* 'destory' - Deactivate the OSD within Ceph and zero fill the device
-* 'recreate' - Destroy then create called in succession
-
-* node[:ceph][:osd_bootstrap]
-
-This is the CephX key that is used for creating new OSD instances and is
-created as part of the initial cluster creation.  If this key does not exist,
-or does not have the correct capabilities applied to it, then automated OSD
-management will not function.
-
-## Ceph MON Nodes
-
-* node[:ceph][:mon_bootstrap]
-
-This is the CephX key for creating new MON nodes.  This too is created
-as part of the initial cluster creation.  If this key does not exist
-then automated MON mangement will not function.
-
-* node[:ceph][:fsid]
-
-This is the unique Ceph filesystem ID for the cluster.  This ensures
-that multiple clusters on the same network(s) do not interact.  If
-this does not exist then automate MON mangement will not function.
+* 'zapdisk' - Zap disk and recreate a Ceph OSD
 
 ## Ceph Rados Gateway
 
@@ -94,12 +90,30 @@ this does not exist then automate MON mangement will not function.
 USAGE
 =====
 
-Ceph cluster design is beyond the scope of this README, please turn to the
-public wiki, mailing lists, visit our IRC channel or Ceph Support page:
+Cluster Design
+--------------
 
-http://ceph.newdream.net/wiki/
-http://ceph.newdream.net/mailing-lists-and-irc/
-http://www.cephsupport.com/
+Ceph cluster design is beyond the scope of this README. You should familiarize
+yourself with the documentation at the Ceph website:
+
+http://ceph.com/docs/master/
+
+If you require support you can try reach out to the community by sending a
+message mailing list or joining the IRC channel:
+
+http://ceph.com/resources/mailing-list-irc/
+
+Professional services for Ceph storage systems are availible through Inktank,
+the primary sponsor of Ceph development.
+
+http://www.inktank.com/
+
+Cluster Setup
+-------------
+
+The first thing you will do to stand up a new Ceph cluster is configure the Ceph
+monitors. You will need to generate a cluster uuid (also refered to as a fsid),
+for details consult the attributes section for recipe[ceph::mon].
 
 ## Ceph Monitor
 
@@ -123,7 +137,7 @@ License and Authors
 Author:: Kyle Bader (<kyle.bader@dreamhost.com>)
 Author:: Carl Perry (<carl.perry@dreamhost.com>)
 
-Copyright:: 2011-2013 New Dream Network, LLC.
+Copyright:: 2011-2013, New Dream Network, LLC.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

@@ -1,5 +1,5 @@
 # Cookbook Name:: ceph
-# Recipe:: config 
+# Recipe:: config
 #
 # Author:: Kyle Bader <kyle.bader@dreamhost.com>
 # Author:: Carl Perry <carl.perry@dreamhost.com>
@@ -29,11 +29,18 @@ if (! node["ceph"]["osd_devices"].nil?) then
 end
 
 # Get monitor ips and hostnames
-monitors = {}
-mon_pool = search(:node, "run_list:recipe\[ceph\:\:mon\] AND chef_environment:#{node.chef_environment}")
+mon_initial_members = String.new
+mon_host = String.new
+mon_pool = search(:node, 'run_list:recipe\[ceph\:\:mon\] AND ' +  %Q{chef_environment:"#{node.chef_environment}"})
 mon_pool.each do |monitor|
-  monitors[monitor['hostname']] = get_cephnet_ip("public",monitor)
+  mh = mon_host <<  get_cephnet_ip("public",monitor) << ","
+  mon_host = mh
+  mim = mon_initial_members << monitor.hostname << ","
+  mon_initial_members = mim
 end
+
+Chef::Log.info("mon_initial_members: #{mon_initial_members}")
+Chef::Log.info("mon_host: #{mon_host}")
 
 # Get cluster ips if I'm an OSD
 public_ip = ""
@@ -66,11 +73,11 @@ template "/etc/ceph/ceph.conf" do
   group "root"
   mode "0644"
   variables(
-            :monitors => monitors,
-            :osd_devices => osd_devices,
-            :public_ip => public_ip,
-            :cluster_ip => cluster_ip,
-            :is_radosgw => is_radosgw
+    :mon_host => mon_host[0..-2],
+    :mon_initial_members => mon_initial_members[0..-2],
+    :osd_devices => osd_devices,
+    :public_ip => public_ip,
+    :cluster_ip => cluster_ip,
+    :is_radosgw => is_radosgw
   )
 end
-

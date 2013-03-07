@@ -1,10 +1,11 @@
 #
 # Author:: Kyle Bader <kyle.bader@dreamhost.com>
 # Author:: Carl Perry <carl.perry@dreamhost.com>
+#
 # Cookbook Name:: ceph
 # Recipe:: mon
 #
-# Copyright 2011, 2012 DreamHost Web Hosting
+# Copyright 2011-2013 New Dream Network, LLC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,131 +20,22 @@
 # limitations under the License.
 
 include_recipe "apt"
-include_recipe "runit"
-include_recipe "ceph::rados-rest"
+include_recipe "ntp"
+include_recipe "ceph::rados"
+include_recipe "ceph::config"
 
-def randomFileNameSuffix (numberOfRandomchars)
-  s = ""
-  numberOfRandomchars.times { s << (65 + rand(26))  }
-  s
-end
-
-# Automated monitor creation
-if (node['ceph']['mon_bootstrap'].nil? || node['ceph']['fsid'].nil?)
-  Chef::Log.warn("No mon_bootstrap key and/or fsid found, run /etc/ceph/initial-cluster-setup.sh")
-  monitor_ip = get_cephnet_ip('public',node)
-  template '/etc/ceph/initial-cluster-setup.sh' do
-    source 'inital-cluster-setup.sh.erb'
-    mode '0500'
-    variables(
-      :monitor_ip => monitor_ip
-    )
-  end
-  cookbook_file '/etc/ceph/chef-host-crushmap.txt' do
-    source 'crushmap.txt'
-    mode '0400'
-  end
-  cookbook_file '/etc/ceph/chef-rack-crushmap.txt' do
-    source 'crushmap-rack.txt'
-    mode '0400'
-  end
-  runit_service "mon.#{node['hostname']}" do
-    template_name "mon"
-    log_template_name "mon"
-    start_command "stop"
-    restart_command "stop"
-    options ({
-               'mon_id' => node['hostname']
-             })
-  end
-
-else
-  Chef::Log.info("The mon_bootstrap key and fsid are avaiable, MONs can be created")
-  # We have a cluster, help the user not shoot themself in the foot
-  directory "/srv/ceph" do
-    action :create
-  end
-  file "/etc/ceph/initial-cluster-setup.sh" do
-    action :delete
-  end
-  file "/etc/ceph/chef-host-crushmap.txt" do
-    action :delete
-  end
-  file "/etc/ceph/chef-rack-crushmap.txt" do
-    action :delete
-  end
-  # Does this monitor already exist?
-  if (! File.exists?("/srv/ceph/mon.#{node["hostname"]}/magic") )
-    Chef::Log.info("Going to create ceph MON #{node['hostname']}")
-    # Setup bootstrap keyring
-    bootstrap_key = node['ceph']['mon_bootstrap']
-    bootstrap_path = "/tmp/bootstrap-mon-" + randomFileNameSuffix(7)
-    %x{if [ ! -f #{bootstrap_path} ]; then touch #{bootstrap_path}; ceph-authtool #{bootstrap_path} --name=mon. --add-key='#{bootstrap_key}'; fi}
-
-    # Create a temporary monmap
-    monmap_path = "/tmp/monmap-" + randomFileNameSuffix(7)
-
-    execute "Build empty monmap" do
-      command "monmaptool --create #{monmap_path} --fsid #{node['ceph']['fsid']}"
-    end
-
-    # Get the list of monitors from Chef to build a monmap
-    mon_list = Array.new
-    mon_pool = search(:node, "roles:ceph-mon AND chef_environment:#{node.chef_environment}")
-    mon_pool.each do |monitor|
-      if (node["fqdn"] != monitor["fqdn"])
-        mon_list << get_cephnet_ip('public',monitor)
-      end
-    end
-
-    execute "Bootstrap Monitor" do
-#      command "ceph-mon -i #{node['hostname']} --mkfs --fsid #{node['ceph']['fsid']} --keyring #{bootstrap_path} -m #{mon_list.join(",")}"
-      command "ceph-mon -i #{node['hostname']} --mkfs --fsid #{node['ceph']['fsid']} --keyring #{bootstrap_path}"
-    end
-
-    file bootstrap_path do
-      action :delete
-    end
-
-    file monmap_path do
-      action :delete
-    end
-
-    # Use runit instead
-    service "ceph" do
-      action :disable
-    end
-    runit_service "mon.#{node['hostname']}" do
-      template_name "mon"
-      log_template_name "mon"
-      options({
-                'mon_id' => node['hostname']
-              })
-    end
-  else
-    Chef::Log.info("No ceph MON needed to be created")
-  end
-end
-
-directory "var/lib/ceph/mon/ceph-#{node.hostname}" do
+directory "/var/lib/ceph/mon/ceph-#{node['hostname']}" do
   owner "root"
   group "root"
-  mode "755"
+  mode "0755"
   recursive true
   action :create
 end
 
-file "var/lib/ceph/mon/ceph-#{node.hostname}/done" do
+file "/var/lib/ceph/mon/ceph-#{node.hostname}/upstart" do
   owner "root"
   group "root"
-  mode "644"
-  action :touch
-end
-
-file "var/lib/ceph/mon/ceph-#{node.hostname}/upstart" do
-  owner "root"
-  group "root"
-  mode "644"
+  mode "0644"
   action :touch
 end
 
@@ -152,26 +44,68 @@ service "ceph" do
   action :disable
 end
 
-service "ceph-mon-all" do
+service "ceph-mon-all-starter" do
   provider Chef::Provider::Service::Upstart
   supports :restart => true
-  action [:enable, :start]
+  action :enable
 end
 
-template "/usr/bin/ceph-cluster-health.pl" do
-  source "ceph-cluster-health.pl.erb"
-  owner "root"
-  group "root"
-  mode "0755"
-  variables(
-            :mailhost => node['ceph']['mail_host'],
-            :critical_email => node['ceph']['critical_email'],
-            :fqdn => node['fqdn']
-            )
+if node.has_key? "ceph"
+  if node["ceph"].has_key? "mon_keyring"
+    mon_keyring = node['ceph']['mon_keyring']
+    template "/var/lib/ceph/mon/ceph-#{node['hostname']}/keyring" do
+      source "mon-ceph.keyring.erb"
+      owner "root"
+      group "root"
+      mode "0600"
+      variables(
+        :mon_keyring => mon_keyring
+      )
+    end
+    execute "Initializing Ceph monitor" do
+      command "/usr/bin/ceph-mon --mkfs -i #{node['hostname']} -k /var/lib/ceph/mon/ceph-#{node['hostname']}/keyring && touch /var/lib/ceph/mon/ceph-#{node.hostname}/done"
+      action :run
+      not_if "test -f /var/lib/ceph/mon/ceph-#{node.hostname}/done"
+      notifies :start, "service[ceph-mon-all-starter]", :immediately
+    end
+  else
+    ruby_block "Generate keyring" do
+      block do
+        mon_keyring = %x{/usr/bin/ceph-authtool -p --gen-print-key -n mon.}
+        Chef::Log.error("Couldn't generate monitor keyring")
+      end
+    end
+    template "/var/lib/ceph/mon/ceph-#{node['hostname']}/keyring" do
+      source "mon-ceph.keyring.erb"
+      owner "root"
+      group "root"
+      mode "0600"
+      variables(
+        :mon_keyring => mon_keyring
+      )
+      not_if "test -f /var/lib/ceph/mon/ceph-#{node['hostname']}/keyring"
+    end
+  end
+else
+  Chef::Log.error("No Ceph node attributes")
+  raise error
 end
 
-cron "ceph-cluster-health" do
-  minute "*/5"
-  command "setlock -n /tmp/check-cluster-health /usr/bin/ceph-cluster-health.pl '#{node['ceph']['warning_email']}' '#{node['ceph']['critical_email']}' '#{node['ceph']['cluster_name']}' > /dev/null"
-  only_if do File.exist?("/usr/bin/ceph-cluster-health.pl") end
+execute "Create OSD and admin keys" do
+  command "ceph-create-keys -i #{node['hostname']}"
+  Chef::Log.error("Couldn't create keyrings!") unless $?.exitstatus == 0
+  action :run
+  not_if do
+    File.exists?("/var/lib/ceph/bootstrap-osd/ceph.keyring")
+#,"/etc/ceph/ceph.client.admin.keyring")
+  end
+end
+
+ruby_block "Slurp Ceph keys and set overrides" do
+  block do
+    node.override["ceph"]["bootstrap_osd_key"] = File.read("/var/lib/ceph/bootstrap-osd/ceph.keyring")
+    Chef::Log.error("Couldn't slurp Ceph OSD keyring!") unless $?.exitstatus == 0
+    node.override["ceph"]["admin_key"] = File.read("/etc/ceph/ceph.client.admin.keyring")
+    Chef::Log.error("Couldn't slurp Ceph admin keyring!") unless $?.exitstatus == 0
+  end
 end

@@ -1,11 +1,8 @@
 #
-# Author:: Kyle Bader <kyle.bader@dreamhost.com>
-# Author:: Carl Perry <carl.perry@dreamhost.com>
-#
 # Cookbook Name:: ceph
-# Recipe:: rados-client
+# Attributes:: rados
 #
-# Copyright 2011, 2012 DreamHost Web Hosting
+# Copyright 2011-2013, New Dream Network, LLC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,24 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
-include_recipe "apt"
-include_recipe "ceph::default"
-
-radosgw_packages = %w{
-  librados2
-  radosgw
-  radosgw-dbg
-}
-
-radosgw_packages.each do |pkg|
-  apt_preference pkg do
-    pin "version #{node['ceph']['version']}"
-    pin_priority "1001"
-  end
-  package pkg do
-    version node["ceph"]["version"]
-    action :install
-    options "-o Dpkg::Options::='--force-confold'"
-  end
-end
+default["ceph"]["version"] = "0.33-505-gb71f3bc-1~bpo60+1"

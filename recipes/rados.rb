@@ -1,8 +1,11 @@
 #
-# Cookbook Name:: ceph
-# Attributes:: oss
+# Author:: Kyle Bader <kyle.bader@dreamhost.com>
+# Author:: Carl Perry <carl.perry@dreamhost.com>
 #
-# Copyright 2011-2013, New Dream Network, LLC.
+# Cookbook Name:: ceph
+# Recipe:: rados
+#
+# Copyright 2011-2013 New Dream Network, LLC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +18,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
-default["ceph"]["version"] = "0.33-505-gb71f3bc-1~bpo60+1"
+include_recipe "apt"
+include_recipe "ceph::default"
+
+radosgw_packages = %w{
+  librados2
+  radosgw
+  radosgw-dbg
+}
+
+radosgw_packages.each do |pkg|
+  apt_preference pkg do
+    pin "version #{node['ceph']['version']}"
+    pin_priority "1001"
+  end
+  package pkg do
+    version node["ceph"]["version"]
+    action :install
+    options "-o Dpkg::Options::='--force-confold'"
+  end
+end

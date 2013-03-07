@@ -23,25 +23,25 @@ apt_repository "ceph" do
   uri node["ceph"]["apt"]["ceph_repo"]
   distribution node["lsb"]["codename"]
   components ["main"]
-  keyserver node["ceph"]["apt"]["key_server"]
-  key node["ceph"]["apt"]["ceph_key"]
-  action :add
+#  keyserver node["ceph"]["apt"]["key_server"]
+#  key node["ceph"]["apt"]["ceph_key"]
+#  action :add
 end
 
 apt_repository "ceph-apache2" do
   uri node["ceph"]["apt"]["apache2_repo"]
   distribution node["lsb"]["codename"]
   components ["main"]
-  keyserver node["ceph"]["apt"]["key_server"]
-  key node["ceph"]["apt"]["apache2_key"]
-  action :add
+#  keyserver node["ceph"]["apt"]["key_server"]
+#  key node["ceph"]["apt"]["apache2_key"]
+#  action :add
 end
 
 apt_repository "ceph-fastcgi" do
   uri node["ceph"]["apt"]["fastcgi_repo"]
   distribution node["lsb"]["codename"]
   components ["main"]
-  keyserver node["ceph"]["apt"]["key_server"]
-  key node["ceph"]["apt"]["fastcgi_key"]
-  action :add
+#  keyserver node["ceph"]["apt"]["key_server"]
+#  key node["ceph"]["apt"]["fastcgi_key"]
+#  action :add
 end

@@ -20,7 +20,7 @@
 # limitations under the License.
 
 include_recipe "apt"
-include_recipe "ceph::rados-rest"
+include_recipe "ceph::rados"
 
 def randomFileNameSuffix (numberOfRandomchars)
   s = ""

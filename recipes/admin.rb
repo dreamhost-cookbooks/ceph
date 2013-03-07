@@ -20,7 +20,7 @@
 # limitations under the License.
 
 include_recipe "apt"
-include_recipe "ceph::rados-rest"
+include_recipe "ceph::rados"
 
 package "python-simplejson" do
   action :upgrade
@@ -30,12 +30,13 @@ package "python-tz" do
   action :upgrade
 end
 
-if (node["ceph"]["admin_key"].nil?) then
-  Chef::Log.info("No admin key available for creating keyring")
-else
-  execute "create admin keyring" do
-    command "ceph-authtool -C /etc/ceph/client.admin.keyring --name=client.admin --add-key='#{node['ceph']['admin_key']}'"
-    creates "/etc/ceph/client.admin.keyring"
-    action :run
-  end
+mons = search(:node, 'run_list:recipe\[ceph\:\:mon\] AND ' +  %Q{chef_environment:"#{node.chef_environment}"})
+
+file "/etc/ceph/ceph.client.admin.keyring" do
+  content mons[0]["ceph"]["admin_key"]
+  owner "root"
+  group "root"
+  mode "0600"
+  action :create
+  not_if {mons[0]["ceph"]["admin_key"].nil?}
 end

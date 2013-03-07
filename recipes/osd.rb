@@ -5,7 +5,7 @@
 # Cookbook Name:: ceph
 # Recipe:: osd
 #
-# Copyright 2011, 2012 DreamHost Web Hosting
+# Copyright 2011-2013 New Dream Network, LLC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,72 +21,115 @@
 
 include_recipe "apt"
 include_recipe "ceph::default"
+include_recipe "ceph::config"
+include_recipe "ceph::admin"
 
-def create_osd (osd_device)
-  Chef::Log.info("Initializaing Ceph OSD with #{osd_device['device']}")
-  if (osd_device['filesystem'] == 'btrfs' and osd_device['encrypted'] == true)
-    execute "Ceph Encrypted Disk Preparation with btrfs" do
-      command "setlock -n /tmp/create-#{osd_device['device'].gsub(/\//, '')} ceph-disk-prepare --type btrfs --dmcrypt #{osd_device['device']}"
-      action :run
-    end
-  elsif (osd_device['filesystem'] == 'btrfs' and osd_device['encrypted'] == false)
-    execute "Ceph Disk Preparation with btrfs" do
-      command "setlock -n /tmp/create-#{osd_device['device'].gsub(/\//, '')} ceph-disk-prepare --type btrfs #{osd_device['device']}"
-      action :run
-    end
-  elsif (osd_device['filesystem'] == 'ext4' and osd_device['encrypted'] == true)
-    execute "Ceph Encrypted Disk Preparation with ext4" do
-      command "setlock -n /tmp/create-#{osd_device['device'].gsub(/\//, '')} ceph-disk-prepare --type btrfs --dmcrypt #{osd_device['device']}"
-      action :run
-    end
-  elsif (osd_device['filesystem'] == 'ext4' and osd_device['encrypted'] == false)
-    execute "Ceph Disk Preparation with ext4" do
-      command "setlock -n /tmp/create-#{osd_device['device'].gsub(/\//, '')} ceph-disk-prepare --type btrfs #{osd_device['device']}"
-      action :run
-    end
-  elsif (osd_device['encrypted'] == true)
-    execute "Ceph Encrypted Disk Preparation with xfs" do
-      command "setlock -n /tmp/create-#{osd_device['device'].gsub(/\//, '')} ceph-disk-prepare --type xfs --dmcrypt #{osd_device['device']}"
-      action :run
-    end
-  else
-    execute "Ceph Disk Prepare Preparation with xfs" do
-      command "setlock -n /tmp/create-#{osd_device['device'].gsub(/\//, '')} ceph-disk-prepare --type xfs #{osd_device['device']}"
-      action :run
-    end
-  end
-  # reset status
-  osd_device['status'] = "hold"
-end
-
-def recreate_osd(osd_device)
-    Chef::Log.info("Just kidding, not implemented yet")
-  osd_device['status'] = "hold"
-end
-
-# install cryptsetup for dmcrypt
+# Preparation for dmcrypt OSDs
 package "cryptsetup" do
   action :install
 end
-
-node['ceph']['osd_devices'].each do |osd_device|
-  # do nothing if osd_device status = hold
-  if (osd_device['status'] == "create")
-    create_osd(osd_device)
-  elsif (osd_device['status'] == "recreate")
-    Chef::Log.info("Recreating Ceph OSD #{osd_device['device']}")
-  end
-  node.save
+directory "/etc/ceph/dmcrypt-keys" do
+  owner "root"
+  group "root"
+  mode "0700"
+  action :create
 end
 
+# Install gdisk and parted for ceph-disk-prepare.
+# This should be fixed later by fixing the depends
+# in the ceph package.
+["gdisk", "parted"].each do |pkg|
+  package pkg do
+    action :install
+  end
+end
+
+# Disable System-V init scripts and enable
+# upstart supervision for Ceph OSD daemons.
 service "ceph" do
   service_name "ceph"
-  action [:disable]
+  action :disable
 end
-
 service "ceph-osd-all" do
   provider Chef::Provider::Service::Upstart
   service_name "ceph-osd-all"
   supports :restart => true
-  action [:enable, :start]
+  action :enable
+end
+
+# Search for Ceph monitors
+mons = search(:node, 'run_list:recipe\[ceph\:\:mon\] AND ' +  %Q{chef_environment:"#{node.chef_environment}"})
+
+# Inject bootstrap key for new Ceph OSDs
+file "/var/lib/ceph/bootstrap-osd/ceph.keyring" do
+  content mons[0]["ceph"]["bootstrap_osd_key"]
+  action :create
+  not_if do
+    mons[0]["ceph"]["bootstrap_osd_key"].nil?
+  end
+  notifies :start, "service[ceph-osd-all]", :immediately
+end
+
+# Iterate through OSD devices on this node and take one of three
+# actions: create, zapdisk, hold
+# 
+# create   - Create a new OSD
+# recreate - Destroy and recreate an OSD
+# zapdisk  - Prepare disk ignoring existing partitions
+# hold     - Do nothing
+#
+node["ceph"]["osd_devices"].each_with_index do |osd_device,index|
+  if osd_device["encrypted"] == true
+    encrypted = "--dmcrypt"
+  else
+    encrypted = ""
+  end
+  if (osd_device["status"] == "create")
+    execute "Creating Ceph OSD on #{osd_device['device']}" do
+      command "ceph-disk-prepare #{encrypted} #{osd_device['device']}"
+      action :run
+      notifies :start, "service[ceph-osd-all]", :immediately
+    end
+  elsif (osd_device["status"] == "zapdisk")
+    execute "Creating Ceph OSD on #{osd_device['device']}" do
+      command "ceph-disk-prepare #{encrypted} --zap-disk #{osd_device['device']}"
+      action :run
+      notifies :start, "service[ceph-osd-all]", :immediately
+    end
+  elsif (osd_device["status"] == "recreate")
+    data_uuid = %x{ sgdisk -i 1 #{osd_device['device']} | grep 'unique GUID' | awk '{print $4}' | tail -n1 }.downcase.chomp
+    journal_uuid = %x{ sgdisk -i 2 #{osd_device['device']} | grep 'unique GUID' | awk '{print $4}' | tail -n1 }.downcase.chomp
+    mount_path = "/dev/mapper/" + data_uuid
+    osd_id = %x{ cat $(grep #{data_uuid} /etc/mtab | awk '{print $2}')/whoami }.chomp
+    execute "Stop ceph-osd: osd.#{osd_id}" do
+      command "stop ceph-osd id=#{osd_id}"
+    end
+    execute "Marking down osd.#{osd_id}" do
+      command "ceph osd down #{osd_id}"
+    end
+    execute "Marking out osd.#{osd_id}" do
+      command "ceph osd out #{osd_id}"
+    end
+    execute "Remove osd.#{osd_id} from crushmap" do
+      command "ceph osd rm #{osd_id}"
+    end
+    execute "Unmount volumes" do
+      command "umount /var/lib/ceph/osd/ceph-#{osd_id}"
+    end
+    execute "Remove device mapper data device" do
+      command "cryptsetup remove #{data_uuid}"
+      only_if {osd_device['encrypted'] == true}
+    end
+    execute "Remove device mapper journal device" do
+      command "cryptsetup remove #{journal_uuid}"
+      only_if {osd_device['encrypted'] == true}
+    end
+    execute "Creating Ceph OSD on #{osd_device['device']}" do
+      command "ceph-disk-prepare #{encrypted} --zap-disk #{osd_device['device']}"
+      action :run
+      notifies :start, "service[ceph-osd-all]", :immediately
+    end
+  end
+  node.normal["ceph"]["osd_devices"][index]["status"] = "hold"
+  node.save
 end
