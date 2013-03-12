@@ -24,6 +24,7 @@ include_recipe "ntp"
 include_recipe "ceph::rados"
 include_recipe "ceph::config"
 
+
 directory "/var/lib/ceph/mon/ceph-#{node['hostname']}" do
   owner "root"
   group "root"
@@ -50,62 +51,74 @@ service "ceph-mon-all-starter" do
   action :enable
 end
 
-if node.has_key? "ceph"
-  if node["ceph"].has_key? "mon_keyring"
-    mon_keyring = node['ceph']['mon_keyring']
-    template "/var/lib/ceph/mon/ceph-#{node['hostname']}/keyring" do
-      source "mon-ceph.keyring.erb"
-      owner "root"
-      group "root"
-      mode "0600"
-      variables(
-        :mon_keyring => mon_keyring
-      )
-    end
-    execute "Initializing Ceph monitor" do
-      command "/usr/bin/ceph-mon --mkfs -i #{node['hostname']} -k /var/lib/ceph/mon/ceph-#{node['hostname']}/keyring && touch /var/lib/ceph/mon/ceph-#{node.hostname}/done"
-      action :run
-      not_if "test -f /var/lib/ceph/mon/ceph-#{node.hostname}/done"
-      notifies :start, "service[ceph-mon-all-starter]", :immediately
-    end
-  else
-    ruby_block "Generate keyring" do
-      block do
-        mon_keyring = %x{/usr/bin/ceph-authtool -p --gen-print-key -n mon.}
-        Chef::Log.error("Couldn't generate monitor keyring")
+if !File.exists?("/var/lib/ceph/mon/ceph-#{node.hostname}/done")
+  if node.has_key? "ceph"
+    if node["ceph"].has_key? "mon_keyring"
+      mon_keyring = node['ceph']['mon_keyring']
+      template "/var/lib/ceph/mon/ceph-#{node['hostname']}/keyring" do
+        source "mon-ceph.keyring.erb"
+        owner "root"
+        group "root"
+        mode "0600"
+        variables(
+          :mon_keyring => mon_keyring
+        )
+      end
+      execute "Initializing Ceph monitor" do
+        command "/usr/bin/ceph-mon --mkfs -i #{node['hostname']} -k /var/lib/ceph/mon/ceph-#{node['hostname']}/keyring && touch /var/lib/ceph/mon/ceph-#{node.hostname}/done"
+        action :run
+        not_if "test -f /var/lib/ceph/mon/ceph-#{node.hostname}/done"
+        notifies :start, "service[ceph-mon-all-starter]", :immediately
+      end
+      mon_deployed = get_quorum_members()
+      ruby_block "tell ceph-mon about its peers" do
+        block do
+          mon_deployed.each do |mon|
+            system 'ceph', \
+              '--admin-daemon', "/var/run/ceph/ceph-mon.#{node['hostname']}.asok", \
+              'add_bootstrap_peer_hint', mon
+          end
+        end
+      end
+    else
+      ruby_block "Generate keyring" do
+        block do
+          mon_keyring = %x{/usr/bin/ceph-authtool -p --gen-print-key -n mon.}
+          Chef::Log.error("Couldn't generate monitor keyring")
+        end
+      end
+      template "/var/lib/ceph/mon/ceph-#{node['hostname']}/keyring" do
+        source "mon-ceph.keyring.erb"
+        owner "root"
+        group "root"
+        mode "0600"
+        variables(
+          :mon_keyring => mon_keyring
+        )
+        not_if "test -f /var/lib/ceph/mon/ceph-#{node['hostname']}/keyring"
       end
     end
-    template "/var/lib/ceph/mon/ceph-#{node['hostname']}/keyring" do
-      source "mon-ceph.keyring.erb"
-      owner "root"
-      group "root"
-      mode "0600"
-      variables(
-        :mon_keyring => mon_keyring
-      )
-      not_if "test -f /var/lib/ceph/mon/ceph-#{node['hostname']}/keyring"
+  else
+    Chef::Log.error("No Ceph node attributes")
+    raise error
+  end
+
+  execute "Create OSD and admin keys" do
+    command "ceph-create-keys -i #{node['hostname']}"
+    Chef::Log.error("Couldn't create keyrings!") unless $?.exitstatus == 0
+    action :run
+    not_if do
+      File.exists?("/var/lib/ceph/bootstrap-osd/ceph.keyring")
+#,"/etc/ceph/ceph.client.admin.keyring")
     end
   end
-else
-  Chef::Log.error("No Ceph node attributes")
-  raise error
-end
 
-execute "Create OSD and admin keys" do
-  command "ceph-create-keys -i #{node['hostname']}"
-  Chef::Log.error("Couldn't create keyrings!") unless $?.exitstatus == 0
-  action :run
-  not_if do
-    File.exists?("/var/lib/ceph/bootstrap-osd/ceph.keyring")
-#,"/etc/ceph/ceph.client.admin.keyring")
-  end
-end
-
-ruby_block "Slurp Ceph keys and set overrides" do
-  block do
-    node.override["ceph"]["bootstrap_osd_key"] = File.read("/var/lib/ceph/bootstrap-osd/ceph.keyring")
-    Chef::Log.error("Couldn't slurp Ceph OSD keyring!") unless $?.exitstatus == 0
-    node.override["ceph"]["admin_key"] = File.read("/etc/ceph/ceph.client.admin.keyring")
-    Chef::Log.error("Couldn't slurp Ceph admin keyring!") unless $?.exitstatus == 0
+  ruby_block "Slurp Ceph keys and set overrides" do
+    block do
+      node.override["ceph"]["bootstrap_osd_key"] = File.read("/var/lib/ceph/bootstrap-osd/ceph.keyring")
+      Chef::Log.error("Couldn't slurp Ceph OSD keyring!") unless $?.exitstatus == 0
+      node.override["ceph"]["admin_key"] = File.read("/etc/ceph/ceph.client.admin.keyring")
+      Chef::Log.error("Couldn't slurp Ceph admin keyring!") unless $?.exitstatus == 0
+    end
   end
 end

@@ -28,29 +28,20 @@ if (! node["ceph"]["osd_devices"].nil?) then
   end
 end
 
-# Get monitor ips and hostnames
-mon_initial_members = String.new
+mon_initial_members = node["ceph"]["mon_initial_members"].split(",")
 mon_host = String.new
 mon_pool = search(:node, 'run_list:recipe\[ceph\:\:mon\] AND ' +  %Q{chef_environment:"#{node.chef_environment}"})
 mon_pool.each do |monitor|
-  mh = mon_host <<  get_cephnet_ip("public",monitor) << ","
-  mon_host = mh
-  mim = mon_initial_members << monitor.hostname << ","
-  mon_initial_members = mim
+    mh = mon_host << find_ip("public_network", monitor) << ","
+    mon_host = mh
 end
+mon_host_array = mon_host.split(",")
+
+raise "Ceph mon_count no set" unless node["ceph"]["mon_count"]
+raise "Ceph mon_count does not match mon_initial_members" unless node["ceph"]["mon_count"] == mon_initial_members.length
 
 Chef::Log.info("mon_initial_members: #{mon_initial_members}")
 Chef::Log.info("mon_host: #{mon_host}")
-
-# Get cluster ips if I'm an OSD
-public_ip = ""
-cluster_ip = ""
-node.run_list.each do |matching|
-  if (matching == "recipe[ceph::osd]")
-    public_ip = get_cephnet_ip("public",node)
-    cluster_ip = get_cephnet_ip("cluster",node)
-  end
-end
 
 # Am I a RESTful RADOS Gateway?
 is_radosgw = 0
@@ -73,8 +64,7 @@ template "/etc/ceph/ceph.conf" do
   group "root"
   mode "0644"
   variables(
-    :mon_host => mon_host[0..-2],
-    :mon_initial_members => mon_initial_members[0..-2],
+    :mon_host => mon_host,
     :osd_devices => osd_devices,
     :public_ip => public_ip,
     :cluster_ip => cluster_ip,

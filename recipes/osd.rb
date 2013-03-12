@@ -97,10 +97,14 @@ node["ceph"]["osd_devices"].each_with_index do |osd_device,index|
       notifies :start, "service[ceph-osd-all]", :immediately
     end
   elsif (osd_device["status"] == "recreate")
-    data_uuid = %x{ sgdisk -i 1 #{osd_device['device']} | grep 'unique GUID' | awk '{print $4}' | tail -n1 }.downcase.chomp
-    journal_uuid = %x{ sgdisk -i 2 #{osd_device['device']} | grep 'unique GUID' | awk '{print $4}' | tail -n1 }.downcase.chomp
-    mount_path = "/dev/mapper/" + data_uuid
-    osd_id = %x{ cat $(grep #{data_uuid} /etc/mtab | awk '{print $2}')/whoami }.chomp
+    if (osd_device['encrypted'] == true)
+      data_uuid = %x{ sgdisk -i 1 #{osd_device['device']} | grep 'unique GUID' | awk '{print $4}' | tail -n1 }.downcase.chomp
+      journal_uuid = %x{ sgdisk -i 2 #{osd_device['device']} | grep 'unique GUID' | awk '{print $4}' | tail -n1 }.downcase.chomp
+      mount_path = "/dev/mapper/" + data_uuid
+      osd_id = %x{ cat $(grep #{data_uuid} /etc/mtab | awk '{print $2}')/whoami }.chomp
+    else
+      osd_id = %x{ cat $(grep #{osd_device['device']} /etc/mtab | awk '{print $2}'/whoami }.chomp
+    end
     execute "Stop ceph-osd: osd.#{osd_id}" do
       command "stop ceph-osd id=#{osd_id}"
     end
@@ -110,8 +114,11 @@ node["ceph"]["osd_devices"].each_with_index do |osd_device,index|
     execute "Marking out osd.#{osd_id}" do
       command "ceph osd out #{osd_id}"
     end
-    execute "Remove osd.#{osd_id} from crushmap" do
+    execute "Remove osd.#{osd_id} from cluster" do
       command "ceph osd rm #{osd_id}"
+    end
+    execute "Remove osd.#{osd_id} from crush" do
+      command "ceph osd crush rm osd.#{osd_id}"
     end
     execute "Unmount volumes" do
       command "umount /var/lib/ceph/osd/ceph-#{osd_id}"
