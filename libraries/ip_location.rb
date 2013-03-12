@@ -22,7 +22,7 @@ require "uri"
 def find_ip(network, nodeish=nil)
   nodeish = node unless nodeish
   dest = node["ceph"]["networks"][network]
-  net = IPAddr.new(network)
+  net = IPAddr.new(dest)
   node["network"]["interfaces"].each do |iface|
     if net.ipv4()
       if iface.routes[1].destination == dest
