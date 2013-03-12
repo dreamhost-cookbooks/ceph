@@ -21,7 +21,7 @@ require "uri"
 
 def find_ip(network, nodeish=nil)
   nodeish = node unless nodeish
-  dest = node["ceph"][network]
+  dest = node["ceph"]["network"][network]
   net = IPAddr.new(dest)
   node["network"]["interfaces"].each do |iface|
     if iface.routes[1].destination == dest

@@ -32,8 +32,8 @@ mon_initial_members = node["ceph"]["mon_initial_members"].split(",")
 mon_host = String.new
 mon_pool = search(:node, 'run_list:recipe\[ceph\:\:mon\] AND ' +  %Q{chef_environment:"#{node.chef_environment}"})
 mon_pool.each do |monitor|
-    mh = mon_host << find_ip("public_network", monitor) << ","
-    mon_host = mh
+  mh = mon_host << find_ip("public", monitor) << ","
+  mon_host = mh
 end
 mon_host_array = mon_host.split(",")
 
