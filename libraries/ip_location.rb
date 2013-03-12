@@ -22,12 +22,14 @@ require "uri"
 def find_ip(network, nodeish=nil)
   nodeish = node unless nodeish
   dest = node["ceph"]["networks"][network]
-  net = IPAddr.new(dest)
+  net = IPAddr.new(network)
   node["network"]["interfaces"].each do |iface|
-    if iface.routes[1].destination == dest
-      if net.ipv4?
+    if net.ipv4()
+      if iface.routes[1].destination == dest
         return iface.routes[1].src
-      else
+      end
+    else
+      if iface.routes[2].destination == dest
         iface["addresses"].each do |k,v|
           if v["scope"] == "Global"
             return k

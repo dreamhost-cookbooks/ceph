@@ -2,8 +2,8 @@
 [global]
   mon initial members = <%= node["ceph"]["mon_initial_members"] %>
   mon host = <%= @mon_host %>
-  public network = <%= node["ceph"]["public_network"] %>
-  cluster network = <%= node["ceph"]["cluster_network"] %>
+  public network = <%= node["ceph"]["networks"]["public"] %>
+  cluster network = <%= node["ceph"]["networks"]["cluster_network"] %>
 <% node["ceph"]["config"]["global"].each do |key, value| -%>
   <%= key %> = <%= value %>
 <% end -%>
