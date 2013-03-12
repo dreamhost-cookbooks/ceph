@@ -24,7 +24,7 @@ def find_ip(network, nodeish=nil)
   dest = node["ceph"]["networks"][network]
   net = IPAddr.new(dest)
   node["network"]["interfaces"].each do |iface|
-    if net.ipv4()
+    if net.ipv4?
       if iface.routes[1].destination == dest
         return iface.routes[1].src
       end
