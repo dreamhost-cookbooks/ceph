@@ -24,14 +24,17 @@ def find_ip(network, nodeish=nil)
   dest = node["ceph"]["networks"][network]
   net = IPAddr.new(dest)
   node["network"]["interfaces"].each do |iface|
+    if iface[1]["routes"].nil?
+      next
+    end
     if net.ipv4?
-      if iface.routes[1].destination == dest
-        return iface.routes[1].src
+      if iface[1]["routes"][1]["destination"] == dest
+        iface[1]["routes"][1]["src"]
       end
     else
-      if iface.routes[2].destination == dest
-        iface["addresses"].each do |k,v|
-          if v["scope"] == "Global"
+      if iface[1]["routes"][2]["destination"] == dest
+        iface[1]["addresses"].each do |k,v|
+          if v["scope"] == "Global" and v["family"] == "inet6"
             return k
           end
         end
