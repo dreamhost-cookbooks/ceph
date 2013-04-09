@@ -68,7 +68,7 @@ def get_cephnet_ip(network, nodeish = nil)
         if v["family"] == "inet6" or v["family"] == "inet" then
           addr=IPAddr.new(k)
           if net.include?(addr) then
-            if addr.ipv6? then return "["+addr.to_s+"]" else return addr.to_s end
+            if addr.ipv6? then return "[#{addr.to_s}]" else return addr.to_s end
           end # net include
         end # family check
       end # interface address loop
