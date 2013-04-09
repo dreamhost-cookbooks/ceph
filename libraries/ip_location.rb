@@ -1,6 +1,11 @@
 #!/usr/bin/env ruby
+
 #
-# Copyright 2012-2013, New Dream Network, LLC.
+# Shamelessly adapted from Rackspace osops-utils cookbook
+# https://github.com/rcbops-cookbooks/osops-utils
+#
+# Copyright 2012, Rackspace Hosting, Inc.
+# Copyright 2012, DreamHost Web Hosting
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,45 +24,58 @@ require "chef/search/query"
 require "ipaddr"
 require "uri"
 
-def find_ip(network, nodeish=nil)
-  nodeish = node unless nodeish
-  dest = node["ceph"]["networks"][network]
-  net = IPAddr.new(dest)
-  node["network"]["interfaces"].each do |iface|
-    if iface[1]["routes"].nil?
-      next
-    end
-    if net.ipv4?
-      if iface[1]["routes"][1]["destination"] == dest
-        iface[1]["routes"][1]["src"]
-      end
-    else
-      if iface[1]["routes"][2]["destination"] == dest
-        iface[1]["addresses"].each do |k,v|
-          if v["scope"] == "Global" and v["family"] == "inet6"
-            return k
-          end
-        end
-      end
-    end
-  end
-end
+def get_cephnet_ip(network, nodeish = nil)
+  nodish = node unless nodeish
 
-def get_quorum_members()
-  mon_names = []
-  mon_status = %x[ceph --admin-daemon /var/run/ceph/ceph-mon.#{node['hostname']}.asok mon_status]
-  raise 'getting quorum members failed' unless $?.exitstatus == 0
-  mons = JSON.parse(mon_status)['monmap']['mons']
-  mons.each do |k|
-    mons_names.push(k['addr'][0..-3])
+  if network == "all"
+    return "0.0.0.0"
   end
-  return mon_names
-end
 
-QUORUM_STATES = ['leader', 'peon']
-def have_quorum?()
-  mon_status = %x[ceph --admin-daemon /var/run/ceph/ceph-mon.#{node['hostname']}.asok mon_status]
-  raise 'getting quorum members failed' unless $?.exitstatus == 0
-  state = JSON.parse(mon_status)['state']
-  return QUORUM_STATES.include?(state)
+  if network == "localhost"
+    return "127.0.0.1"
+  end
+
+  # Check to see if there are networks defined
+  ceph = node['ceph']
+  if not (ceph.has_key?("networks")) then
+    error = "No ceph networks defined, defaulting to 0.0.0.0"
+    Chef::Log.warn(error)
+    return "0.0.0.0"
+  end
+  networks = node["ceph"]["networks"]
+
+  # See if the requested network exists
+  if not (networks.has_key?(network)) then
+    error = "Can't find ceph network #{network}, defaulting to 0.0.0.0"
+    Chef::Log.error(error)
+    return "0.0.0.0"
+  end
+
+  # Get the network list from the attributes.
+  # A string is converted to a single item array
+  netlist = nil
+  if networks[network].kind_of?(Array) then
+    netlist = networks[network]
+  else
+    netlist = Array.new(1, networks[network])
+  end
+
+  # Iterate through the networks provided, looking for a match
+  netlist.each do |netrequest|
+    net = IPAddr.new(netrequest)
+    nodeish["network"]["interfaces"].each do |interface|
+      interface[1]["addresses"].each do |k,v|
+        if v["family"] == "inet6" or v["family"] == "inet" then
+          addr=IPAddr.new(k)
+          if net.include?(addr) then
+            if addr.ipv6? then return "["+addr.to_s+"]" else return addr.to_s end
+          end # net include
+        end # family check
+      end # interface address loop
+    end # interface loop
+  end # requested network loop
+
+  error = "Can't find address on ceph network #{network} for node"
+  Chef::Log.error(error)
+  raise error
 end
