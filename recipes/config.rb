@@ -18,31 +18,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Grab any OSD devices on this node
-osd_devices = []
-if (! node["ceph"]["osd_devices"].nil?) then
-  node["ceph"]["osd_devices"].each do |osd_device|
-    if (! osd_device['osd_id'].nil?)
-      osd_devices << osd_device
-    end
-  end
-end
-
-mon_initial_members = node["ceph"]["mon_initial_members"].split(",")
-mon_host = String.new
-mon_pool = search(:node, 'run_list:recipe\[ceph\:\:mon\] AND ' +  %Q{chef_environment:"#{node.chef_environment}"})
-mon_pool.each do |monitor|
-  mh = mon_host << get_cephnet_ip("public", monitor) << ","
-  mon_host = mh
-end
-mon_host_array = mon_host.split(",")
-
-raise "Ceph mon_count no set" unless node["ceph"]["mon_count"]
-raise "Ceph mon_count does not match mon_initial_members" unless node["ceph"]["mon_count"] == mon_initial_members.length
-
-Chef::Log.info("mon_initial_members: #{mon_initial_members}")
-Chef::Log.info("mon_host: #{mon_host}")
-
 # Am I a RESTful RADOS Gateway?
 is_radosgw = 0
 node.run_list.each do |matching|
@@ -64,8 +39,6 @@ template "/etc/ceph/ceph.conf" do
   group "root"
   mode "0644"
   variables(
-    :mon_host => mon_host,
-    :osd_devices => osd_devices,
     :public_ip => public_ip,
     :cluster_ip => cluster_ip,
     :is_radosgw => is_radosgw
