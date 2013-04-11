@@ -32,11 +32,12 @@ end
 
 mons = search(:node, 'run_list:recipe\[ceph\:\:mon\] AND ' +  %Q{chef_environment:"#{node.chef_environment}"})
 
-file "/etc/ceph/ceph.client.admin.keyring" do
-  content mons[0]["ceph"]["admin_key"]
-  owner "root"
-  group "root"
-  mode "0600"
-  action :create
-  not_if {mons[0]["ceph"]["admin_key"].nil?}
+if mons[0]["ceph"]["admin_key"]
+  file "/etc/ceph/ceph.client.admin.keyring" do
+    content mons[0]["ceph"]["admin_key"]
+    owner "root"
+    group "root"
+    mode "0600"
+    action :create
+  end
 end
