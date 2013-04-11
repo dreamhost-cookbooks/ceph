@@ -70,16 +70,6 @@ if !File.exists?("/var/lib/ceph/mon/ceph-#{node.hostname}/done")
         not_if "test -f /var/lib/ceph/mon/ceph-#{node.hostname}/done"
         notifies :start, "service[ceph-mon-all-starter]", :immediately
       end
-      mon_deployed = get_quorum_members()
-      ruby_block "tell ceph-mon about its peers" do
-        block do
-          mon_deployed.each do |mon|
-            system 'ceph', \
-              '--admin-daemon', "/var/run/ceph/ceph-mon.#{node['hostname']}.asok", \
-              'add_bootstrap_peer_hint', mon
-          end
-        end
-      end
     else
       ruby_block "Generate keyring" do
         block do
