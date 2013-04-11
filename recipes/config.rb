@@ -39,8 +39,6 @@ template "/etc/ceph/ceph.conf" do
   group "root"
   mode "0644"
   variables(
-    :public_ip => public_ip,
-    :cluster_ip => cluster_ip,
     :is_radosgw => is_radosgw
   )
 end
