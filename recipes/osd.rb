@@ -137,6 +137,6 @@ node["ceph"]["osd_devices"].each_with_index do |osd_device,index|
       notifies :start, "service[ceph-osd-all]", :immediately
     end
   end
-  node.normal["ceph"]["osd_devices"][index]["status"] = "hold"
+  node.force_default["ceph"]["osd_devices"][index]["status"] = "hold"
   node.save
 end
