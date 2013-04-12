@@ -137,9 +137,9 @@ node["ceph"]["osd_devices"].each_with_index do |osd_device,index|
       notifies :start, "service[ceph-osd-all]", :immediately
     end
   end
-  node.override["ceph"]["osd_devices"][index]["device"] = node["ceph"]["osd_devices"][index]["device"]
-  node.override["ceph"]["osd_devices"][index]["encrypted"] = node["ceph"]["osd_devices"][index]["encrypted"]
-  node.override["ceph"]["osd_devices"][index]["filesystem"] = node["ceph"]["osd_devices"][index]["filesystem"]
-  node.override["ceph"]["osd_devices"][index]["status"] = "hold"
+  node.normal["ceph"]["osd_devices"][index]["device"] = node["ceph"]["osd_devices"][index]["device"]
+  node.normal["ceph"]["osd_devices"][index]["encrypted"] = node["ceph"]["osd_devices"][index]["encrypted"]
+  node.normal["ceph"]["osd_devices"][index]["filesystem"] = node["ceph"]["osd_devices"][index]["filesystem"]
+  node.normal["ceph"]["osd_devices"][index]["status"] = "hold"
   node.save
 end
