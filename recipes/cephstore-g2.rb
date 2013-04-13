@@ -7,7 +7,7 @@
 # All rights reserved - Do Not Redistribute
 #
 
-node.normal['ceph']['osd-devices'] = [
+node.normal['ceph']['osd_devices'] = [
   {
     'device' => '/dev/sdb',
     'filesystem' => 'xfs',
