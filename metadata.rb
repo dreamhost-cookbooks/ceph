@@ -3,7 +3,7 @@ maintainer_email "kyle.bader@dreamhost.com"
 license          "Apache 2.0"
 description      "Installs/Configures the Ceph distributed filesystem"
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
-version          "3.0.70"
+version          "3.0.71"
 recipe           "ceph::admin", "Ceph admin keyring"
 recipe           "ceph::mds", "Ceph metadata server"
 recipe           "ceph::mon", "Ceph monitor"
