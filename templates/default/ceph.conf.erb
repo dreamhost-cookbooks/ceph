@@ -21,7 +21,7 @@
 <% end -%>
 
 [osd]
-ceph osd crush location rack=<%= node['rack'] -%>, row=<%= node['row'] %>
+ceph osd crush location rack=<%= node['rack'] -%> row=<%= node['row'] %>
 <% node["ceph"]["config"]["osd"].each do |key, value| -%>
   <%= key %> = <%= value %>
 <% end -%>
