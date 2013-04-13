@@ -134,7 +134,7 @@ node["ceph"]["osd_devices"].each_with_index do |osd_device,index|
     execute "Creating Ceph OSD on #{osd_device['device']}" do
       command "ceph-disk-prepare #{encrypted} --zap-disk #{osd_device['device']}"
       action :run
-      notifies :start, "service[ceph-osd-all]", :immediately
+      notifies :start, 'service[ceph-osd-all]', :immediately
     end
   end
   node.normal['ceph']['osd_devices'][index]['device'] = osd_device['device']
