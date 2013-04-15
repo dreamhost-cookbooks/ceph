@@ -89,12 +89,14 @@ node["ceph"]["osd_devices"].each_with_index do |osd_device,index|
       command "ceph-disk-prepare #{encrypted} #{osd_device['device']}"
       action :run
       notifies :start, "service[ceph-osd-all]", :immediately
+      only_if 'test -e /var/lib/ceph/bootstrap-osd/ceph.keyring'
     end
   elsif (osd_device["status"] == "zapdisk")
     execute "Creating Ceph OSD on #{osd_device['device']}" do
       command "ceph-disk-prepare #{encrypted} --zap-disk #{osd_device['device']}"
       action :run
       notifies :start, "service[ceph-osd-all]", :immediately
+      only_if 'test -e /var/lib/ceph/bootstrap-osd/ceph.keyring'
     end
   elsif (osd_device["status"] == "recreate")
     if (osd_device['encrypted'] == true)
@@ -135,6 +137,7 @@ node["ceph"]["osd_devices"].each_with_index do |osd_device,index|
       command "ceph-disk-prepare #{encrypted} --zap-disk #{osd_device['device']}"
       action :run
       notifies :start, 'service[ceph-osd-all]', :immediately
+      only_if 'test -e /var/lib/ceph/bootstrap-osd/ceph.keyring'
     end
   end
   node.normal['ceph']['osd_devices'][index]['device'] = osd_device['device']
