@@ -99,16 +99,15 @@ if !File.exists?("/var/lib/ceph/mon/ceph-#{node.hostname}/done")
     action :run
     not_if do
       File.exists?("/var/lib/ceph/bootstrap-osd/ceph.keyring")
-#,"/etc/ceph/ceph.client.admin.keyring")
     end
   end
+end
 
-  ruby_block "Slurp Ceph keys and set overrides" do
-    block do
-      node.override["ceph"]["bootstrap_osd_key"] = File.read("/var/lib/ceph/bootstrap-osd/ceph.keyring")
-      Chef::Log.error("Couldn't slurp Ceph OSD keyring!") unless $?.exitstatus == 0
-      node.override["ceph"]["admin_key"] = File.read("/etc/ceph/ceph.client.admin.keyring")
-      Chef::Log.error("Couldn't slurp Ceph admin keyring!") unless $?.exitstatus == 0
-    end
+ruby_block "Slurp Ceph keys and set overrides" do
+  block do
+    node.normal["ceph"]["bootstrap_osd_key"] = File.read("/var/lib/ceph/bootstrap-osd/ceph.keyring")
+    Chef::Log.error("Couldn't slurp Ceph OSD keyring!") unless $?.exitstatus == 0
+    node.normal["ceph"]["admin_key"] = File.read("/etc/ceph/ceph.client.admin.keyring")
+    Chef::Log.error("Couldn't slurp Ceph admin keyring!") unless $?.exitstatus == 0
   end
 end
